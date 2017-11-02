@@ -3,56 +3,29 @@ package com.bbi93.tlog16rs.core.beans;
 import com.bbi93.tlog16rs.core.exceptions.FutureWorkException;
 import java.time.DateTimeException;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import lombok.Getter;
 import com.bbi93.tlog16rs.core.exceptions.EmptyTimeFieldException;
 import com.bbi93.tlog16rs.core.exceptions.NegativeMinutesOfWorkException;
-import com.bbi93.tlog16rs.core.exceptions.NoTaskDeclaredException;
 import com.bbi93.tlog16rs.core.exceptions.NotSeparatedTimesException;
 import com.bbi93.tlog16rs.core.utils.Util;
+import lombok.NoArgsConstructor;
 
 /**
  *
  * @author bbi93
  */
 @Getter
+@NoArgsConstructor
 public class WorkDay {
 
 	private static final long DEFAULT_REQUIRED_MIN_PER_DAY = 450;
 
 	private List<Task> tasks = new ArrayList<>();
-	private long requiredMinPerDay;
+	private long requiredMinPerDay=DEFAULT_REQUIRED_MIN_PER_DAY;
 	private LocalDate actualDay;
 	private long sumPerDay;
-
-	public WorkDay() throws NegativeMinutesOfWorkException, FutureWorkException {
-		this(LocalDate.now());
-	}
-
-	public WorkDay(LocalDate actualDay) throws NegativeMinutesOfWorkException, FutureWorkException {
-		this(DEFAULT_REQUIRED_MIN_PER_DAY, actualDay);
-	}
-
-	public WorkDay(long requiredMinPerDay) throws NegativeMinutesOfWorkException, FutureWorkException {
-		this(requiredMinPerDay, LocalDate.now());
-	}
-
-	public WorkDay(int year, int month, int day) throws NegativeMinutesOfWorkException, DateTimeException, FutureWorkException {
-		this(DEFAULT_REQUIRED_MIN_PER_DAY, LocalDate.of(year, month, day));
-	}
-
-	public WorkDay(long requiredMinPerDay, int year, int month, int day) throws NegativeMinutesOfWorkException, DateTimeException, FutureWorkException {
-		this(requiredMinPerDay, LocalDate.of(year, month, day));
-	}
-
-	public WorkDay(long requiredMinPerDay, LocalDate actualDay) throws NegativeMinutesOfWorkException, FutureWorkException {
-		this.setRequiredMinPerDay(requiredMinPerDay);
-		this.setActualDay(actualDay);
-	}
 
 	/**
 	 *
@@ -107,40 +80,6 @@ public class WorkDay {
 		} else {
 			throw new NotSeparatedTimesException("Task has time conflict with other task in workday.");
 		}
-	}
-
-	/**
-	 *
-	 * @return Task This method returns the task which is the last of the workday.
-	 * @throws NoTaskDeclaredException On task list is empty.
-	 */
-	public Task getLatestTaskOfDay() throws NoTaskDeclaredException {
-		List<Task> tasksInDay = this.getTasks();
-		if (tasksInDay.size() > 0) {
-			Task lastTask = tasksInDay.get(0);
-			for (Task task : tasksInDay) {
-				try {
-					if (task.getEndTime().isAfter(lastTask.getEndTime())) {
-						lastTask = task;
-					}
-				} catch (EmptyTimeFieldException ex) {
-					Logger.getLogger(WorkDay.class.getName()).log(Level.SEVERE, null, ex);
-				}
-			}
-			return lastTask;
-		}
-		throw new NoTaskDeclaredException("No task in this workday.");
-	}
-
-	/**
-	 *
-	 * @return LocalTime Returns the finish time of the last task of workday.
-	 * @throws EmptyTimeFieldException On task list has task which has unsetted time field.
-	 * @throws NoTaskDeclaredException On task list is empty.
-	 */
-	public LocalTime endTimeOfTheLastTask() throws EmptyTimeFieldException, NoTaskDeclaredException {
-		Task task = this.getLatestTaskOfDay();
-		return task.getEndTime();
 	}
 
 	public String toStatistics() throws EmptyTimeFieldException {
