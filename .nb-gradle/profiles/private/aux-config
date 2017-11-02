@@ -11,11 +11,10 @@
     <editor-bookmarks lastBookmarkId="0" xmlns="http://www.netbeans.org/ns/editor-bookmarks/2"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
       <group>
-        <file>file:/home/precognox/WORK/POLC_TRAINING/TLOG16RS/build.gradle</file>
+        <file>file:/home/precognox/WORK/POLC_TRAINING/TLOG16RS/src/main/java/com/bbi93/tlog16rs/core/beans/Task.java</file>
+        <file>file:/home/precognox/WORK/POLC_TRAINING/TLOG16RS/src/main/java/com/bbi93/tlog16rs/core/beans/WorkMonthRB.java</file>
         <file>file:/home/precognox/WORK/POLC_TRAINING/TLOG16RS/src/main/java/com/bbi93/tlog16rs/resources/TLOG16RSResource.java</file>
-        <file>file:/home/precognox/WORK/POLC_TRAINING/TLOG16RS/src/main/java/com/bbi93/tlog16rs/TLOG16RSConfiguration.java</file>
-        <file>file:/home/precognox/WORK/POLC_TRAINING/TLOG16RS/src/main/java/com/bbi93/tlog16rs/core/Greeting.java</file>
-        <file>file:/home/precognox/WORK/POLC_TRAINING/TLOG16RS/src/main/java/com/bbi93/tlog16rs/TLOG16RSApplication.java</file>
+        <file>file:/home/precognox/WORK/POLC_TRAINING/TLOG16RS/.gitignore</file>
       </group>
     </open-files>
   </auxiliary>

@@ -22,7 +22,7 @@ public class TimeLogger {
 	/**
 	 *
 	 * @param wm Workmonth to check.
-	 * @return boolean Return treu, if workmonth list not contains workmonth with same value date field.
+	 * @return boolean Return true, if workmonth list not contains workmonth with same value date field.
 	 */
 	public boolean isNewMonth(WorkMonth wm) {
 		return months.stream().filter(month -> month.getDate().equals(wm.getDate())).count() == 0;
