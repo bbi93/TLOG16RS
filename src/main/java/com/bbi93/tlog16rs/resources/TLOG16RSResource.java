@@ -9,8 +9,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+@Path("/tlog16rs")
 public class TLOG16RSResource {
 
+	@Path("/hello")
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getGreeting() {
