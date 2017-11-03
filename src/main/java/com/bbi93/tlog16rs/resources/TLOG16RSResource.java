@@ -1,5 +1,7 @@
 package com.bbi93.tlog16rs.resources;
 
+import com.bbi93.tlog16rs.core.beans.StartTaskRB;
+import com.bbi93.tlog16rs.core.beans.Task;
 import com.bbi93.tlog16rs.core.beans.TimeLogger;
 import com.bbi93.tlog16rs.core.beans.WorkDay;
 import com.bbi93.tlog16rs.core.beans.WorkMonth;
@@ -78,6 +80,51 @@ public class TLOG16RSResource {
 			}
 		}
 		return selectedWorkMonth;
+	}
+
+	@Path("/workmonths/workdays/tasks/start")
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Task startTask(StartTaskRB taskBean) throws Exception {
+		Task task = new Task();
+		task.setTaskId(taskBean.getTaskId());
+		task.setStartTime(taskBean.getStartTime());
+		task.setComment(taskBean.getComment());
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
+		if (selectedWorkDay == null) {
+			WorkDayRB newWorkDay = new WorkDayRB();
+			newWorkDay.setYear(taskBean.getYear());
+			newWorkDay.setMonth(taskBean.getMonth());
+			newWorkDay.setDay(taskBean.getDay());
+			selectedWorkDay = this.addNewDay(newWorkDay);
+		}
+		selectedWorkDay.addTask(task);
+		return task;
+	}
+
+	private WorkDay selectWorkDayByYearAndMonthAndDayNumber(List<WorkMonth> months, int yearToSearch, int monthToSearch, int dayToSearch) {
+		WorkDay selectedWorkDay = null;
+		WorkMonth selectedWorkMonth = selectWorkMonthByYearAndMonthNumber(months, yearToSearch, monthToSearch);
+
+		if (selectedWorkMonth == null) {
+			WorkMonthRB newWorkMonth = new WorkMonthRB();
+			newWorkMonth.setYear(yearToSearch);
+			newWorkMonth.setMonth(monthToSearch);
+			selectedWorkMonth = this.addNewMonth(newWorkMonth);
+		}
+
+		for (WorkDay workDay : selectedWorkMonth.getDays()) {
+			if (workDay.getActualDay().getYear() == yearToSearch) {
+				if (workDay.getActualDay().getMonthValue() == monthToSearch) {
+					if (workDay.getActualDay().getDayOfMonth() == dayToSearch) {
+						selectedWorkDay = workDay;
+						break;
+					}
+				}
+			}
+		}
+		return selectedWorkDay;
 	}
 
 }

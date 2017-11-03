@@ -36,7 +36,7 @@ public class WorkDay {
 		long daySum = 0;
 		for (Task task : tasks) {
 			try {
-				daySum += task.getMinPerTask();
+				daySum += task.calculateMinPerTask();
 			} catch (EmptyTimeFieldException ex) {
 				throw new EmptyTimeFieldException(task.getTaskId() + " (" + task.getStartTime() + ") task has unsetted time fields.");
 			}

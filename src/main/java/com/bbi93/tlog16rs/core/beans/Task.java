@@ -11,12 +11,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import com.bbi93.tlog16rs.core.exceptions.EmptyTimeFieldException;
 import com.bbi93.tlog16rs.core.utils.Util;
+import lombok.Setter;
 
 /**
  *
  * @author bbi93
  */
 @Getter
+@Setter
 @NoArgsConstructor
 public class Task {
 
@@ -24,35 +26,6 @@ public class Task {
 	private LocalTime startTime;
 	private LocalTime endTime;
 	private String comment;
-
-	public Task(String taskId) throws Exception {
-		this.setTaskId(taskId);
-	}
-
-	public Task(String taskId, int startHour, int endHour, String comment) throws Exception {
-		this.setTaskId(taskId);
-		int startHourNumber = startHour / 100;
-		int startMinuteNumber = startHour - startHourNumber;
-		this.setStartTime(startHourNumber, startMinuteNumber);
-		int endHourNumber = endHour / 100;
-		int endMinuteNumber = endHour - endHourNumber;
-		this.setEndTime(endHourNumber, endMinuteNumber);
-		this.setComment(comment);
-	}
-
-	public Task(String taskId, String startTimeString, String endTimeString, String comment) throws Exception {
-		this.setTaskId(taskId);
-		this.setStartTime(startTimeString);
-		this.setEndTime(endTimeString);
-		this.setComment(comment);
-	}
-
-	public Task(String taskId, LocalTime startTime, LocalTime endTime, String comment) throws Exception {
-		this.setTaskId(taskId);
-		this.setStartTime(startTime);
-		this.setEndTime(endTime);
-		this.setComment(comment);
-	}
 
 	@Override
 	public String toString() {
@@ -64,7 +37,7 @@ public class Task {
 	 * @return long Elapsed time in minutes between startTime and endTime
 	 * @throws EmptyTimeFieldException On task's one of both time field is not setted.
 	 */
-	public long getMinPerTask() throws EmptyTimeFieldException {
+	public long calculateMinPerTask() throws EmptyTimeFieldException {
 		long startTimeInMinutes = (this.getStartTime().getHour() * 60) + (this.getStartTime().getMinute());
 		long endTimeInMinutes = (this.getEndTime().getHour() * 60) + (this.getEndTime().getMinute());
 		return endTimeInMinutes - startTimeInMinutes;
@@ -126,6 +99,7 @@ public class Task {
 
 	private void setStartTime(LocalTime startTime) {
 		this.startTime = startTime;
+		this.endTime=startTime;
 	}
 
 	public void setStartTime(int hour, int min) throws EmptyTimeFieldException, ImpossibleTimeException {
