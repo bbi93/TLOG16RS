@@ -20,6 +20,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -125,6 +126,35 @@ public class TLOG16RSResource {
 			}
 		}
 		return selectedWorkDay;
+	}
+
+	@Path("/workmonths/{year}/{month}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Collection<WorkDay> getWorkDays(@PathParam(value = "year") int year, @PathParam(value = "month") int month) {
+		WorkMonth selectedWorkMonth = selectWorkMonthByYearAndMonthNumber(timelogger.getMonths(), year, month);
+		if (selectedWorkMonth == null) {
+			WorkMonthRB newWorkMonth = new WorkMonthRB();
+			newWorkMonth.setYear(year);
+			newWorkMonth.setMonth(month);
+			selectedWorkMonth = this.addNewMonth(newWorkMonth);
+		}
+		return selectedWorkMonth.getDays();
+	}
+
+	@Path("/workmonths/{year}/{month}/{day}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Collection<Task> getTasks(@PathParam(value = "year") int year, @PathParam(value = "month") int month, @PathParam(value = "day") int day) throws Exception {
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), year, month, day);
+		if (selectedWorkDay == null) {
+			WorkDayRB newWorkDay = new WorkDayRB();
+			newWorkDay.setYear(year);
+			newWorkDay.setMonth(month);
+			newWorkDay.setDay(day);
+			selectedWorkDay = this.addNewDay(newWorkDay);
+		}
+		return selectedWorkDay.getTasks();
 	}
 
 }

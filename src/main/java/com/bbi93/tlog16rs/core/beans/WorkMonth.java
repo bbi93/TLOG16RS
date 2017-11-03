@@ -22,7 +22,8 @@ public class WorkMonth {
 	private boolean isWeekendEnabled;
 
 	public WorkMonth(int year, int month) {
-		this(year, month, false);
+		this.date = YearMonth.of(year, month);
+		this.isWeekendEnabled = false;
 	}
 
 	public WorkMonth(int year, int month, boolean isWeekendEnabled) {
