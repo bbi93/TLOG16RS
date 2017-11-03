@@ -1,5 +1,6 @@
 package com.bbi93.tlog16rs.resources;
 
+import com.bbi93.tlog16rs.core.beans.FinishingTaskRB;
 import com.bbi93.tlog16rs.core.beans.StartTaskRB;
 import com.bbi93.tlog16rs.core.beans.Task;
 import com.bbi93.tlog16rs.core.beans.TimeLogger;
@@ -7,24 +8,17 @@ import com.bbi93.tlog16rs.core.beans.WorkDay;
 import com.bbi93.tlog16rs.core.beans.WorkMonth;
 import com.bbi93.tlog16rs.core.beans.WorkMonthRB;
 import com.bbi93.tlog16rs.core.beans.WorkDayRB;
-import com.bbi93.tlog16rs.core.exceptions.FutureWorkException;
-import com.bbi93.tlog16rs.core.exceptions.NegativeMinutesOfWorkException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import java.time.DateTimeException;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
@@ -155,6 +149,45 @@ public class TLOG16RSResource {
 			selectedWorkDay = this.addNewDay(newWorkDay);
 		}
 		return selectedWorkDay.getTasks();
+	}
+
+	@Path("/workmonths/workdays/tasks/finish")
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Task finishTask(FinishingTaskRB taskBean) throws Exception {
+		Task task = new Task();
+		task.setTaskId(taskBean.getTaskId());
+		task.setStartTime(taskBean.getStartTime());
+		task.setEndTime(taskBean.getEndTime());
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
+		if (selectedWorkDay == null) {
+			WorkDayRB newWorkDay = new WorkDayRB();
+			newWorkDay.setYear(taskBean.getYear());
+			newWorkDay.setMonth(taskBean.getMonth());
+			newWorkDay.setDay(taskBean.getDay());
+			selectedWorkDay = this.addNewDay(newWorkDay);
+		}
+		Task selectedTask = selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
+		if (selectedTask == null) {
+			selectedWorkDay.addTask(task);
+		} else {
+			selectedTask.setEndTime(taskBean.getEndTime());
+		}
+		return selectedTask;
+	}
+
+	private Task selectTaskByWorkDayAndTaskIdandStartTime(WorkDay workDay, String taskId, String startTime) throws Exception {
+		Task selectedTask = null;
+		for (Task task : workDay.getTasks()) {
+			if (task.getTaskId().equals(taskId)) {
+				if (task.getStartTime().equals(LocalTime.parse(startTime))) {
+					selectedTask = task;
+					break;
+				}
+			}
+		}
+		return selectedTask;
 	}
 
 }

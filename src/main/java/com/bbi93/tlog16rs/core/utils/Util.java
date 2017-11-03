@@ -49,22 +49,29 @@ public class Util {
 		for (Task task : tasks) {
 			//if task starts when other task starts
 			if (t.getStartTime().equals(task.getStartTime())) {
+				System.err.println("task starts when other task starts");
 				return false;
 			}
 			//if task ends when other task ends
 			if (t.getEndTime().equals(task.getEndTime())) {
-				return false;
+				if (!task.getStartTime().equals(task.getEndTime()) && !t.getStartTime().equals(t.getEndTime())) {
+					System.err.println("task ends when other task ends");
+					return false;
+				}
 			}
 			//if starttime inside other task
 			if (t.getStartTime().isAfter(task.getStartTime()) && t.getStartTime().isBefore(task.getEndTime())) {
+				System.err.println("starttime inside other task");
 				return false;
 			}
 			//if endtime inside other task
 			if (t.getEndTime().isAfter(task.getStartTime()) && t.getEndTime().isBefore(task.getEndTime())) {
+				System.err.println("endtime inside other task");
 				return false;
 			}
 			//if task is around of other task
 			if (t.getStartTime().isBefore(task.getStartTime()) && t.getEndTime().isAfter(task.getEndTime())) {
+				System.err.println("task is around of other task");
 				return false;
 			}
 		}

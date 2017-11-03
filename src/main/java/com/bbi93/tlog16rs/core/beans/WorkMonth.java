@@ -18,7 +18,7 @@ public class WorkMonth {
 	private List<WorkDay> days = new ArrayList<>();
 	private YearMonth date;
 	private long sumPerMonth;
-	private long requiredMinPerMonth;
+	private long requiredMinPerMonth=450;
 	private boolean isWeekendEnabled;
 
 	public WorkMonth(int year, int month) {

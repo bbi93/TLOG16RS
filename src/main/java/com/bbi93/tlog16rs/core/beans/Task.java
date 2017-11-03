@@ -178,12 +178,8 @@ public class Task {
 		}
 	}
 
-	public LocalTime getEndTime() throws EmptyTimeFieldException {
-		if (this.endTime != null) {
-			return this.endTime;
-		} else {
-			throw new EmptyTimeFieldException("Endtime not setted yet.");
-		}
+	public LocalTime getEndTime(){
+		return this.endTime;
 	}
 
 }
