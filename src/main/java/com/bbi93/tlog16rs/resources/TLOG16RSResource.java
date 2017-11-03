@@ -1,6 +1,8 @@
 package com.bbi93.tlog16rs.resources;
 
+import com.bbi93.tlog16rs.core.beans.DeleteTaskRB;
 import com.bbi93.tlog16rs.core.beans.FinishingTaskRB;
+import com.bbi93.tlog16rs.core.beans.ModifyTaskRB;
 import com.bbi93.tlog16rs.core.beans.StartTaskRB;
 import com.bbi93.tlog16rs.core.beans.Task;
 import com.bbi93.tlog16rs.core.beans.TimeLogger;
@@ -188,6 +190,54 @@ public class TLOG16RSResource {
 			}
 		}
 		return selectedTask;
+	}
+
+	@Path("/workmonths/workdays/tasks/modify")
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Task modifyTask(ModifyTaskRB taskBean) throws Exception {
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
+		if (selectedWorkDay == null) {
+			WorkDayRB newWorkDay = new WorkDayRB();
+			newWorkDay.setYear(taskBean.getYear());
+			newWorkDay.setMonth(taskBean.getMonth());
+			newWorkDay.setDay(taskBean.getDay());
+			selectedWorkDay = this.addNewDay(newWorkDay);
+		}
+		Task selectedTask = selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
+		if (selectedTask == null) {
+			Task task = new Task();
+			task.setTaskId(taskBean.getNewTaskId());
+			task.setStartTime(taskBean.getNewStartTime());
+			task.setEndTime(taskBean.getNewEndTime());
+			task.setComment(taskBean.getNewComment());
+			selectedWorkDay.addTask(task);
+		} else {
+			selectedTask.setTaskId(taskBean.getNewTaskId());
+			selectedTask.setStartTime(taskBean.getNewStartTime());
+			selectedTask.setEndTime(taskBean.getNewEndTime());
+			selectedTask.setComment(taskBean.getNewComment());
+		}
+		return selectedTask;
+	}
+
+	@Path("/workmonths/workdays/tasks/delete")
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	public void deleteTask(DeleteTaskRB taskBean) throws Exception {
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
+		if (selectedWorkDay == null) {
+			WorkDayRB newWorkDay = new WorkDayRB();
+			newWorkDay.setYear(taskBean.getYear());
+			newWorkDay.setMonth(taskBean.getMonth());
+			newWorkDay.setDay(taskBean.getDay());
+			selectedWorkDay = this.addNewDay(newWorkDay);
+		}
+		Task selectedTask = selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
+		if (selectedTask != null) {
+			selectedWorkDay.getTasks().remove(selectedTask);
+		}
 	}
 
 }
