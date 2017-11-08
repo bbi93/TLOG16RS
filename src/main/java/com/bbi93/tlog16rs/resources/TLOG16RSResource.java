@@ -11,6 +11,15 @@ import com.bbi93.tlog16rs.core.beans.WorkDay;
 import com.bbi93.tlog16rs.core.beans.WorkMonth;
 import com.bbi93.tlog16rs.core.beans.WorkMonthRB;
 import com.bbi93.tlog16rs.core.beans.WorkDayRB;
+import com.bbi93.tlog16rs.core.exceptions.EmptyTimeFieldException;
+import com.bbi93.tlog16rs.core.exceptions.FutureWorkException;
+import com.bbi93.tlog16rs.core.exceptions.InvalidTaskIdException;
+import com.bbi93.tlog16rs.core.exceptions.NegativeMinutesOfWorkException;
+import com.bbi93.tlog16rs.core.exceptions.NoTaskIdException;
+import com.bbi93.tlog16rs.core.exceptions.NotExpectedTimeOrderException;
+import com.bbi93.tlog16rs.core.exceptions.NotSeparatedTimesException;
+import com.bbi93.tlog16rs.core.exceptions.WeekendNotEnabledException;
+import java.time.DateTimeException;
 import java.util.Collection;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -54,30 +63,42 @@ public class TLOG16RSResource {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public WorkDay addNewDay(WorkDayRB day) throws Exception {
+	public WorkDay addNewDay(WorkDayRB day) {
 		WorkDay workDay = new WorkDay();
-		workDay.setRequiredMinPerDay(day.getRequiredHours());
-		workDay.setActualDay(day.getYear(), day.getMonth(), day.getDay());
-		WorkMonth selectedWorkMonth = service.selectWorkMonthByYearAndMonthNumber(timelogger.getMonths(), day.getYear(), day.getMonth());
-		selectedWorkMonth.addWorkDay(workDay);
-		return workDay;
+		try {
+			workDay.setRequiredMinPerDay(day.getRequiredHours());
+			workDay.setActualDay(day.getYear(), day.getMonth(), day.getDay());
+			WorkMonth selectedWorkMonth = service.selectWorkMonthByYearAndMonthNumber(timelogger.getMonths(), day.getYear(), day.getMonth());
+			selectedWorkMonth.addWorkDay(workDay);
+			return workDay;
+		} catch (NegativeMinutesOfWorkException | DateTimeException | FutureWorkException ex) {
+			log.error("Error during create workday. {0} - {1}", ex.getClass(), ex.getMessage());
+		} catch (WeekendNotEnabledException ex) {
+			log.error("Error during add workday to workmonth. {0} - {1}", ex.getClass(), ex.getMessage());
+		}
+		return null;
 	}
 
 	@Path("/workmonths/workdays/tasks/start")
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Task startTask(StartTaskRB taskBean) throws Exception {
+	public Task startTask(StartTaskRB taskBean) {
 		Task task = new Task();
-		task.setTaskId(taskBean.getTaskId());
-		task.setStartTime(taskBean.getStartTime());
-		task.setComment(taskBean.getComment());
-		WorkDay selectedWorkDay = service.selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
-		selectedWorkDay.addTask(task);
-		return task;
+		try {
+			task.setTaskId(taskBean.getTaskId());
+			task.setStartTime(taskBean.getStartTime());
+			task.setComment(taskBean.getComment());
+			WorkDay selectedWorkDay = service.selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
+			selectedWorkDay.addTask(task);
+			return task;
+		} catch (InvalidTaskIdException | NoTaskIdException | EmptyTimeFieldException ex) {
+			log.error("Error during start task. {0} - {1}", ex.getClass(), ex.getMessage());
+		} catch (NotSeparatedTimesException ex) {
+			log.error("Error during add task to workday. {0} - {1}", ex.getClass(), ex.getMessage());
+		}
+		return null;
 	}
-
-
 
 	@Path("/workmonths/{year}/{month}")
 	@GET
@@ -90,7 +111,7 @@ public class TLOG16RSResource {
 	@Path("/workmonths/{year}/{month}/{day}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Collection<Task> getTasks(@PathParam(value = "year") int year, @PathParam(value = "month") int month, @PathParam(value = "day") int day) throws Exception {
+	public Collection<Task> getTasks(@PathParam(value = "year") int year, @PathParam(value = "month") int month, @PathParam(value = "day") int day) {
 		WorkDay selectedWorkDay = service.selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), year, month, day);
 		return selectedWorkDay.getTasks();
 	}
@@ -98,52 +119,56 @@ public class TLOG16RSResource {
 	@Path("/workmonths/workdays/tasks/finish")
 	@PUT
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Task finishTask(FinishingTaskRB taskBean) throws Exception {
+	public void finishTask(FinishingTaskRB taskBean) {
 		Task task = new Task();
-		task.setTaskId(taskBean.getTaskId());
-		task.setStartTime(taskBean.getStartTime());
-		task.setEndTime(taskBean.getEndTime());
-		WorkDay selectedWorkDay = service.selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
-		Task selectedTask = service.selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
-		if (selectedTask == null) {
-			selectedWorkDay.addTask(task);
-		} else {
-			selectedTask.setEndTime(taskBean.getEndTime());
+		try {
+			task.setTaskId(taskBean.getTaskId());
+			task.setStartTime(taskBean.getStartTime());
+			task.setEndTime(taskBean.getEndTime());
+			WorkDay selectedWorkDay = service.selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
+			Task selectedTask = service.selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
+			if (selectedTask == null) {
+				selectedWorkDay.addTask(task);
+			} else {
+				selectedTask.setEndTime(taskBean.getEndTime());
+			}
+		} catch (InvalidTaskIdException | NoTaskIdException | EmptyTimeFieldException | NotExpectedTimeOrderException | NotSeparatedTimesException ex) {
+			log.error("Error during finishing task. {0} - {1}", ex.getClass(), ex.getMessage());
 		}
-		return selectedTask;
 	}
-
 
 	@Path("/workmonths/workdays/tasks/modify")
 	@PUT
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Task modifyTask(ModifyTaskRB taskBean) throws Exception {
+	public void modifyTask(ModifyTaskRB taskBean) {
 		WorkDay selectedWorkDay = service.selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
-		Task selectedTask = service.selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
-		if (selectedTask == null) {
-			Task task = new Task();
-			task.setTaskId(taskBean.getNewTaskId());
-			task.setStartTime(taskBean.getNewStartTime());
-			task.setEndTime(taskBean.getNewEndTime());
-			task.setComment(taskBean.getNewComment());
-			selectedWorkDay.addTask(task);
-		} else {
-			selectedTask.setTaskId(taskBean.getNewTaskId());
-			selectedTask.setStartTime(taskBean.getNewStartTime());
-			selectedTask.setEndTime(taskBean.getNewEndTime());
-			selectedTask.setComment(taskBean.getNewComment());
+		Task selectedTask;
+		try {
+			selectedTask = service.selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
+			if (selectedTask == null) {
+				Task task = new Task();
+				task.setTaskId(taskBean.getNewTaskId());
+				task.setStartTime(taskBean.getNewStartTime());
+				task.setEndTime(taskBean.getNewEndTime());
+				task.setComment(taskBean.getNewComment());
+				selectedWorkDay.addTask(task);
+			} else {
+				selectedTask.setTaskId(taskBean.getNewTaskId());
+				selectedTask.setStartTime(taskBean.getNewStartTime());
+				selectedTask.setEndTime(taskBean.getNewEndTime());
+				selectedTask.setComment(taskBean.getNewComment());
+			}
+		} catch (EmptyTimeFieldException | InvalidTaskIdException | NoTaskIdException | NotExpectedTimeOrderException | NotSeparatedTimesException ex) {
+			log.error("Error during modifying task. {0} - {1}", ex.getClass(), ex.getMessage());
 		}
-		return selectedTask;
 	}
 
 	@Path("/workmonths/workdays/tasks/delete")
 	@PUT
-	@Consumes(MediaType.APPLICATION_JSON)
-	public void deleteTask(DeleteTaskRB taskBean) throws Exception {
+	public void deleteTask(DeleteTaskRB taskBean) {
 		WorkDay selectedWorkDay = service.selectWorkDayByYearAndMonthAndDayNumber(timelogger.getMonths(), taskBean.getYear(), taskBean.getMonth(), taskBean.getDay());
-		Task selectedTask = service.selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
+		Task selectedTask;
+		selectedTask = service.selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskBean.getTaskId(), taskBean.getStartTime());
 		if (selectedTask != null) {
 			selectedWorkDay.getTasks().remove(selectedTask);
 		}

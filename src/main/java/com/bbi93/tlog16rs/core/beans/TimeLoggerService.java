@@ -11,12 +11,14 @@ import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  *
  * @author bbi93
  */
 @NoArgsConstructor
+@Slf4j
 public class TimeLoggerService {
 
 	private static TLOG16RSResource resource;
@@ -75,13 +77,17 @@ public class TimeLoggerService {
 		return newWorkDay;
 	}
 
-	public Task selectTaskByWorkDayAndTaskIdandStartTime(WorkDay workDay, String taskId, String startTime) throws EmptyTimeFieldException {
+	public Task selectTaskByWorkDayAndTaskIdandStartTime(WorkDay workDay, String taskId, String startTime) {
 		Task selectedTask = null;
 		for (Task task : workDay.getTasks()) {
 			if (task.getTaskId().equals(taskId)) {
-				if (task.getStartTime().equals(LocalTime.parse(startTime))) {
-					selectedTask = task;
-					break;
+				try {
+					if (task.getStartTime().equals(LocalTime.parse(startTime))) {
+						selectedTask = task;
+						break;
+					}
+				} catch (EmptyTimeFieldException ex) {
+					log.warn("{0} workday has task with no start time!",workDay);
 				}
 			}
 		}
