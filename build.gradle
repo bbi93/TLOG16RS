@@ -14,11 +14,6 @@ scmVersion {
 }
 project.version = scmVersion.version
 
-project.ext {
-    dropwizardVersion = '0.8.2'   
-}
-
-
 mainClassName = "com.bbi93.tlog16rs.TLOG16RSApplication"
 
 repositories {
