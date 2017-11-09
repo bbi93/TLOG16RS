@@ -1,18 +1,26 @@
 package com.bbi93.tlog16rs.rest.beans;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  *
  * @author bbi93
  */
+@Getter
+@Setter
 @NoArgsConstructor
-@Data
 public class WorkDayRB {
 
 	private int year;
 	private int month;
 	private int day;
 	private int requiredHours;
+
+	public WorkDayRB(int year, int month, int day) {
+		this.year = year;
+		this.month = month;
+		this.day = day;
+	}
 }

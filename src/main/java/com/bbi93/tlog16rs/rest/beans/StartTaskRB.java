@@ -1,7 +1,6 @@
 package com.bbi93.tlog16rs.rest.beans;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -10,7 +9,6 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@NoArgsConstructor
 public class StartTaskRB {
 
 	private int year;
