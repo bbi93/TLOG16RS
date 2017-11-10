@@ -1,4 +1,4 @@
-package com.bbi.tlog16rs.utils;
+package com.bbi93.tlog16rs.utils;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;

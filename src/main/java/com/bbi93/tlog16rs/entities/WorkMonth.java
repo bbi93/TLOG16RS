@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import com.bbi93.tlog16rs.exceptions.WeekendNotEnabledException;
-import com.bbi.tlog16rs.utils.Util;
+import com.bbi93.tlog16rs.utils.Util;
 import java.util.Objects;
 import lombok.Setter;
 
