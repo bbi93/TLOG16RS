@@ -2,13 +2,13 @@ package com.bbi93.tlog16rs.entities;
 
 import java.util.LinkedList;
 import java.util.List;
-import lombok.Data;
+import lombok.Getter;
 
 /**
  *
  * @author bbi93
  */
-@Data
+@Getter
 public class TimeLogger {
 
 	private List<WorkMonth> months = new LinkedList<>();
@@ -17,6 +17,14 @@ public class TimeLogger {
 		if (isNewMonth(wm)) {
 			months.add(wm);
 		}
+	}
+
+	public void deleteMonth(WorkMonth wm) {
+		months.remove(wm);
+	}
+
+	public void deleteMonths() {
+		months.removeAll(months);
 	}
 
 	/**

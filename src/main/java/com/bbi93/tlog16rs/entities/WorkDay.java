@@ -1,16 +1,15 @@
 package com.bbi93.tlog16rs.entities;
 
-import com.bbi93.tlog16rs.exceptions.FutureWorkException;
-import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
-import com.bbi93.tlog16rs.exceptions.EmptyTimeFieldException;
-import com.bbi93.tlog16rs.exceptions.NegativeMinutesOfWorkException;
 import com.bbi93.tlog16rs.exceptions.NotSeparatedTimesException;
 import com.bbi.tlog16rs.utils.Util;
+import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  *
@@ -23,67 +22,74 @@ public class WorkDay {
 	private static final long DEFAULT_REQUIRED_MIN_PER_DAY = 450;
 
 	private List<Task> tasks = new ArrayList<>();
-	private long requiredMinPerDay=DEFAULT_REQUIRED_MIN_PER_DAY;
 	private LocalDate actualDay;
-	private long sumPerDay;
+	@Setter
+	private long requiredMinPerDay;
+	private long workedTimeOfDay;
+	private long extraMinOfDay;
 
-	/**
-	 *
-	 * @return long Returns with sum of all tasks elapsed time in minutes.
-	 * @throws EmptyTimeFieldException On some task one or both time field is empty.
-	 */
-	public long getSumPerDay() throws EmptyTimeFieldException {
-		long daySum = 0;
-		for (Task task : tasks) {
-			try {
-				daySum += task.calculateMinPerTask();
-			} catch (EmptyTimeFieldException ex) {
-				throw new EmptyTimeFieldException(task.getTaskId() + " (" + task.getStartTime() + ") task has unsetted time fields.");
-			}
-		}
-		return daySum;
+	public WorkDay(LocalDate actualDay, long requiredMinPerDay) {
+		this.actualDay = actualDay;
+		this.requiredMinPerDay = requiredMinPerDay;
 	}
 
-	public void setRequiredMinPerDay(long requiredMinPerDay) throws NegativeMinutesOfWorkException {
-		if (requiredMinPerDay >= 0) {
-			this.requiredMinPerDay = requiredMinPerDay;
-		} else {
-			throw new NegativeMinutesOfWorkException("Required minutes cannot be negative.");
-		}
-	}
-
-	public void setActualDay(LocalDate actualDay) throws FutureWorkException {
-		if (LocalDate.now().isBefore(actualDay)) {
-			throw new FutureWorkException("");
-		} else {
-			this.actualDay = actualDay;
-		}
-	}
-
-	public void setActualDay(int year, int month, int day) throws DateTimeException, FutureWorkException {
-		this.setActualDay(LocalDate.of(year, month, day));
-	}
-
-	public long getExtraMinPerDay() throws EmptyTimeFieldException {
-		return getSumPerDay() - getRequiredMinPerDay();
+	public WorkDay(LocalDate actualDay) {
+		this(actualDay, DEFAULT_REQUIRED_MIN_PER_DAY);
 	}
 
 	/**
 	 *
 	 * @param t Parameter is the specified task object to required to add to workday.
 	 * @throws NotSeparatedTimesException On given task's startTime or endTime is in conflict with already added tasks time fields or its intervals.
-	 * @throws EmptyTimeFieldException On given task's one of both time field is not setted.
 	 */
-	public void addTask(Task t) throws NotSeparatedTimesException, EmptyTimeFieldException {
+	public void addTask(Task t) throws NotSeparatedTimesException {
 		if (Util.isSeparatedTime(t, this.getTasks())) {
 			tasks.add(t);
+			calculateWorkedTimeOfDay();
+			calculateExtraMinOfDay();
 		} else {
 			throw new NotSeparatedTimesException("Task has time conflict with other task in workday.");
 		}
 	}
 
-	public String toStatistics() throws EmptyTimeFieldException {
-		return actualDay + " Task number:" + tasks.size() + " Logged time:" + getSumPerDay() + " Extra time:" + getExtraMinPerDay() + ".";
+	public void removeTask(Task t) {
+		tasks.remove(t);
+		calculateWorkedTimeOfDay();
+		calculateExtraMinOfDay();
+	}
+
+	private void calculateWorkedTimeOfDay() {
+		this.workedTimeOfDay = tasks.stream().map((task) -> Util.calculateTimeDifference(task.getStartTime(), task.getEndTime(), ChronoUnit.MINUTES))
+			.reduce(0L, (accumulator, item) -> accumulator + item);
+	}
+
+	private void calculateExtraMinOfDay() {
+		this.extraMinOfDay = this.workedTimeOfDay - this.requiredMinPerDay;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 59 * hash + Objects.hashCode(this.actualDay);
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final WorkDay other = (WorkDay) obj;
+		if (!Objects.equals(this.actualDay, other.actualDay)) {
+			return false;
+		}
+		return true;
 	}
 
 }

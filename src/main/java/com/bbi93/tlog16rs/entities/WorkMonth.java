@@ -4,9 +4,10 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
-import com.bbi93.tlog16rs.exceptions.EmptyTimeFieldException;
 import com.bbi93.tlog16rs.exceptions.WeekendNotEnabledException;
 import com.bbi.tlog16rs.utils.Util;
+import java.util.Objects;
+import lombok.Setter;
 
 /**
  *
@@ -17,8 +18,10 @@ public class WorkMonth {
 
 	private List<WorkDay> days = new ArrayList<>();
 	private YearMonth date;
-	private long sumPerMonth;
-	private long requiredMinPerMonth=450;
+	private long requiredMinPerMonth;
+	private long workedTimeOfMonth;
+	private long extraMinOfMonth;
+	@Setter
 	private boolean isWeekendEnabled;
 
 	public WorkMonth(int year, int month) {
@@ -31,53 +34,6 @@ public class WorkMonth {
 		this.isWeekendEnabled = isWeekendEnabled;
 	}
 
-	public long getExtraMinPerMonth() throws EmptyTimeFieldException {
-		long extramin = 0;
-		for (WorkDay day : days) {
-			extramin += day.getExtraMinPerDay();
-		}
-		return extramin;
-	}
-
-	/**
-	 *
-	 * @return long Returns with sum of all task's elapsed time in minutes in all workday.
-	 * @throws EmptyTimeFieldException On actual workDay's task list has task which has unsetted time field.
-	 */
-	public long getSumPerMonth() throws EmptyTimeFieldException {
-		sumPerMonth = 0;
-		for (WorkDay day : days) {
-			sumPerMonth += day.getSumPerDay();
-		}
-		return sumPerMonth;
-	}
-
-	public long getRequiredMinPerMonth() {
-		requiredMinPerMonth = 0;
-		for (WorkDay day : days) {
-			requiredMinPerMonth += day.getRequiredMinPerDay();
-		}
-		return requiredMinPerMonth;
-	}
-
-	/**
-	 *
-	 * @param wd Workday to check.
-	 * @return boolean Return true if workday list not contains workday which has conflict date conflict.
-	 */
-	public boolean isNewDate(WorkDay wd) {
-		return days.stream().filter(d -> d.getActualDay().isEqual(wd.getActualDay())).count() == 0;
-	}
-
-	/**
-	 *
-	 * @param wd Workday to check.
-	 * @return boolean Return true if workday month value equals with the workmonth's month value.
-	 */
-	public boolean isSameMonth(WorkDay wd) {
-		return date.getMonth() == wd.getActualDay().getMonth();
-	}
-
 	/**
 	 *
 	 * @param wd Workday to add.
@@ -85,13 +41,61 @@ public class WorkMonth {
 	 */
 	public void addWorkDay(WorkDay wd) throws WeekendNotEnabledException {
 		if (!days.contains(wd)) {
-			if (isSameMonth(wd)) {
+			if (date.equals(YearMonth.from(wd.getActualDay()))) {
 				if ((!Util.isWeekday(wd.getActualDay()) && isWeekendEnabled) || Util.isWeekday(wd.getActualDay())) {
 					days.add(wd);
+					calculateRequiredMinPerMonth();
+					calculateWorkedTimeOfMonth();
+					calculateExtraMinOfMonth();
 				} else {
-					throw new WeekendNotEnabledException("Given workday is on weekend, but it's not");
+					throw new WeekendNotEnabledException("Given workday is on weekend, but it's not enabled.");
 				}
 			}
 		}
 	}
+
+	public void removeDay(WorkDay wd) {
+		days.remove(wd);
+		calculateRequiredMinPerMonth();
+		calculateWorkedTimeOfMonth();
+		calculateExtraMinOfMonth();
+	}
+
+	private void calculateRequiredMinPerMonth() {
+		this.requiredMinPerMonth = days.stream().map((day) -> day.getRequiredMinPerDay()).reduce(0L, (accumulator, item) -> accumulator + item);
+	}
+
+	private void calculateWorkedTimeOfMonth() {
+		this.workedTimeOfMonth = days.stream().map((day) -> day.getWorkedTimeOfDay()).reduce(0L, (accumulator, item) -> accumulator + item);
+	}
+
+	private void calculateExtraMinOfMonth() {
+		this.extraMinOfMonth = this.workedTimeOfMonth - this.requiredMinPerMonth;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 5;
+		hash = 37 * hash + Objects.hashCode(this.date);
+		return hash;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final WorkMonth other = (WorkMonth) obj;
+		if (!Objects.equals(this.date, other.date)) {
+			return false;
+		}
+		return true;
+	}
+
 }
