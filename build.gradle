@@ -14,7 +14,7 @@ scmVersion {
 }
 project.version = scmVersion.version
 
-mainClassName = "com.bbi93.tlog16rs.TLOG16RSApplication"
+mainClassName = "com.bbi93.tlog16rs.application.TLOG16RSApplication"
 
 repositories {
     mavenCentral()
