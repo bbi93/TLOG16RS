@@ -1,97 +1,130 @@
 package com.bbi93.tlog16rs.services;
 
-import com.bbi93.tlog16rs.rest.beans.WorkDayRB;
-import com.bbi93.tlog16rs.rest.beans.WorkMonthRB;
-import com.bbi93.tlog16rs.exceptions.EmptyTimeFieldException;
 import com.bbi93.tlog16rs.entities.Task;
+import com.bbi93.tlog16rs.entities.TimeLogger;
 import com.bbi93.tlog16rs.entities.WorkDay;
 import com.bbi93.tlog16rs.entities.WorkMonth;
-import com.bbi93.tlog16rs.rest.TLOG16RSResource;
+import com.bbi93.tlog16rs.exceptions.NotSeparatedTimesException;
+import com.bbi93.tlog16rs.exceptions.WeekendNotEnabledException;
+import com.bbi93.tlog16rs.rest.beans.DeleteTaskRB;
+import com.bbi93.tlog16rs.rest.beans.FinishingTaskRB;
+import com.bbi93.tlog16rs.rest.beans.ModifyTaskRB;
+import com.bbi93.tlog16rs.rest.beans.StartTaskRB;
+import com.bbi93.tlog16rs.rest.beans.WorkDayRB;
+import com.bbi93.tlog16rs.rest.beans.WorkMonthRB;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.Collection;
-import java.util.List;
-import lombok.NoArgsConstructor;
+import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  *
  * @author bbi93
  */
-@NoArgsConstructor
 @Slf4j
 public class TimeLoggerService {
 
-	private static TLOG16RSResource resource;
-
-	public static void setResource(TLOG16RSResource resource) {
-		TimeLoggerService.resource = resource;
+	public Collection<WorkMonth> getWorkMonths(TimeLogger timelogger) {
+		return timelogger.getMonths();
 	}
 
-	public WorkMonth selectWorkMonthByYearAndMonthNumber(Collection<WorkMonth> months, int yearToSearch, int monthToSearch) {
-		WorkMonth selectedWorkMonth = null;
-		for (WorkMonth month : months) {
-			if (month.getDate().getYear() == yearToSearch && month.getDate().getMonthValue() == monthToSearch) {
-				selectedWorkMonth = month;
-				break;
+	public WorkMonth addNewWorkMonth(TimeLogger timelogger, WorkMonthRB monthRB) {
+		WorkMonth workMonth = new WorkMonth(monthRB.getYear(), monthRB.getMonth());
+		timelogger.addMonth(workMonth);
+		return workMonth;
+	}
+
+	public WorkDay addNewWorkDay(TimeLogger timelogger, WorkDayRB dayRB) throws WeekendNotEnabledException {
+		WorkMonth selectedWorkMonth = selectWorkMonthByYearAndMonthNumber(timelogger, dayRB.getYear(), dayRB.getMonth());
+		WorkDay workDay = new WorkDay(LocalDate.of(dayRB.getYear(), dayRB.getMonth(), dayRB.getDay()), dayRB.getRequiredHours());
+		selectedWorkMonth.addWorkDay(workDay);
+		return workDay;
+	}
+
+	private WorkMonth selectWorkMonthByYearAndMonthNumber(TimeLogger timelogger, int yearToSearch, int monthToSearch) {
+		for (WorkMonth month : timelogger.getMonths()) {
+			if (month.getDate().equals(YearMonth.of(yearToSearch, monthToSearch))) {
+				return month;
 			}
 		}
-		if (selectedWorkMonth == null) {
-			selectedWorkMonth = resource.addNewMonth(createWorkMonthRB(yearToSearch, monthToSearch));
-		}
-		return selectedWorkMonth;
+		return addNewWorkMonth(timelogger, new WorkMonthRB(yearToSearch, monthToSearch));
 	}
 
-	private WorkMonthRB createWorkMonthRB(int year, int month) {
-		WorkMonthRB newWorkMonth = new WorkMonthRB();
-		newWorkMonth.setYear(year);
-		newWorkMonth.setMonth(month);
-		return newWorkMonth;
+	public Task startNewTask(TimeLogger timelogger, StartTaskRB taskRB) throws NotSeparatedTimesException, WeekendNotEnabledException {
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger, taskRB.getYear(), taskRB.getMonth(), taskRB.getDay());
+		Task task = new Task(taskRB.getTaskId(), LocalTime.parse(taskRB.getStartTime()), taskRB.getComment());
+		selectedWorkDay.addTask(task);
+		return task;
 	}
 
-	public WorkDay selectWorkDayByYearAndMonthAndDayNumber(List<WorkMonth> months, int yearToSearch, int monthToSearch, int dayToSearch) {
-		WorkDay selectedWorkDay = null;
-		WorkMonth selectedWorkMonth = selectWorkMonthByYearAndMonthNumber(months, yearToSearch, monthToSearch);
-
+	private WorkDay selectWorkDayByYearAndMonthAndDayNumber(TimeLogger timelogger, int yearToSearch, int monthToSearch, int dayToSearch) throws WeekendNotEnabledException {
+		WorkMonth selectedWorkMonth = selectWorkMonthByYearAndMonthNumber(timelogger, yearToSearch, monthToSearch);
 		for (WorkDay workDay : selectedWorkMonth.getDays()) {
-			if (workDay.getActualDay().getYear() == yearToSearch) {
-				if (workDay.getActualDay().getMonthValue() == monthToSearch) {
-					if (workDay.getActualDay().getDayOfMonth() == dayToSearch) {
-						selectedWorkDay = workDay;
-						break;
-					}
-				}
+			if (workDay.getActualDay().isEqual(LocalDate.of(yearToSearch, monthToSearch, dayToSearch))) {
+				return workDay;
 			}
 		}
+		return addNewWorkDay(timelogger, new WorkDayRB(yearToSearch, monthToSearch, dayToSearch));
+	}
 
-		if (selectedWorkDay == null) {
-			selectedWorkDay = resource.addNewDay(createWorkDayRB(yearToSearch, monthToSearch, dayToSearch));
+	public Collection<WorkDay> getWorkDays(TimeLogger timelogger, int year, int month) {
+		WorkMonth selectedWorkMonth = selectWorkMonthByYearAndMonthNumber(timelogger, year, month);
+		return selectedWorkMonth.getDays();
+	}
+
+	public Collection<Task> getTasks(TimeLogger timelogger, int year, int month, int day) {
+		try {
+			return selectWorkDayByYearAndMonthAndDayNumber(timelogger, year, month, day).getTasks();
+		} catch (WeekendNotEnabledException ex) {
+			log.error("Tasks cannot be found because the given day is not exist.", ex);
 		}
-		return selectedWorkDay;
+		return Collections.emptyList();
 	}
 
-	private WorkDayRB createWorkDayRB(int year, int month, int day) {
-		WorkDayRB newWorkDay = new WorkDayRB();
-		newWorkDay.setYear(year);
-		newWorkDay.setMonth(month);
-		newWorkDay.setDay(day);
-		return newWorkDay;
+	public void finishSpecificTask(TimeLogger timelogger, FinishingTaskRB taskRB) throws WeekendNotEnabledException, NotSeparatedTimesException {
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger, taskRB.getYear(), taskRB.getMonth(), taskRB.getDay());
+		Task selectedTask = selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskRB.getTaskId(), taskRB.getStartTime());
+		if (selectedTask.equals(new Task())) {
+			selectedWorkDay.addTask(new Task(taskRB.getTaskId(), LocalTime.parse(taskRB.getStartTime()), LocalTime.parse(taskRB.getEndTime())));
+		} else {
+			selectedTask.setEndTime(taskRB.getEndTime());
+		}
 	}
 
-	public Task selectTaskByWorkDayAndTaskIdandStartTime(WorkDay workDay, String taskId, String startTime) {
-		Task selectedTask = null;
+	private Task selectTaskByWorkDayAndTaskIdandStartTime(WorkDay workDay, String taskId, String startTime) {
 		for (Task task : workDay.getTasks()) {
-			if (task.getTaskId().equals(taskId)) {
-				try {
-					if (task.getStartTime().equals(LocalTime.parse(startTime))) {
-						selectedTask = task;
-						break;
-					}
-				} catch (EmptyTimeFieldException ex) {
-					log.warn("{0} workday has task with no start time!",workDay);
-				}
+			if (task.getTaskId().equals(taskId) && task.getStartTime().equals(LocalTime.parse(startTime))) {
+				return task;
 			}
 		}
-		return selectedTask;
+		return new Task();
 	}
 
+	public void modifySpecificTask(TimeLogger timelogger, ModifyTaskRB taskRB) throws WeekendNotEnabledException, NotSeparatedTimesException {
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger, taskRB.getYear(), taskRB.getMonth(), taskRB.getDay());
+		Task selectedTask = selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskRB.getTaskId(), taskRB.getStartTime());
+		if (selectedTask.equals(new Task())) {
+			Task task = new Task(taskRB.getNewTaskId(), LocalTime.parse(taskRB.getNewStartTime()), LocalTime.parse(taskRB.getNewEndTime()), taskRB.getNewComment());
+			selectedWorkDay.addTask(task);
+		} else {
+			selectedTask.setTaskId(taskRB.getNewTaskId());
+			selectedTask.setStartTime(taskRB.getNewStartTime());
+			selectedTask.setEndTime(taskRB.getNewEndTime());
+			selectedTask.setComment(taskRB.getNewComment());
+		}
+	}
+
+	public void deleteSpecificTask(TimeLogger timelogger, DeleteTaskRB taskRB) throws WeekendNotEnabledException {
+		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger, taskRB.getYear(), taskRB.getMonth(), taskRB.getDay());
+		Task selectedTask = selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskRB.getTaskId(), taskRB.getStartTime());
+		if (!selectedTask.equals(new Task())) {
+			selectedWorkDay.removeTask(selectedTask);
+		}
+	}
+
+	public void deleteAll(TimeLogger timelogger) {
+		timelogger.deleteMonths();
+	}
 }
