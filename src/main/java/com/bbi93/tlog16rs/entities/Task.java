@@ -34,6 +34,9 @@ public class Task {
 	public Task(String taskId, LocalTime startTime, String comment) {
 		this(taskId, startTime, LocalTime.MIDNIGHT, comment);
 	}
+	public Task(String taskId, LocalTime startTime, LocalTime endTime) {
+		this(taskId, startTime, endTime, DEFAULT_COMMENT);
+	}
 
 	public void setStartTime(LocalTime startTime) {
 		this.startTime = startTime;
