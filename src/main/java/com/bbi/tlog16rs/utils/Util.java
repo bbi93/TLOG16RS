@@ -6,10 +6,10 @@ import java.time.LocalTime;
 import java.util.Collection;
 import com.bbi93.tlog16rs.entities.Task;
 import com.bbi93.tlog16rs.entities.WorkDay;
-import com.bbi93.tlog16rs.exceptions.EmptyTimeFieldException;
-import com.bbi93.tlog16rs.exceptions.NoTaskDeclaredException;
-import com.bbi93.tlog16rs.exceptions.NotExpectedTimeOrderException;
-import java.util.List;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
+import java.util.Comparator;
 
 /**
  *
@@ -17,24 +17,42 @@ import java.util.List;
  */
 public class Util {
 
+	private static final int QUARTER_HOUR_IN_MINUTES = 15;
+
 	/**
-	 * This method rounds given endtine to quarter hour.
+	 * Calculate elapsed time in given TemporalUnit between two LocalTime object
+	 *
+	 * @param startTime
+	 * @param endTime
+	 * @param temporalUnit
+	 * @return long value of time difference in given temporal unit
+	 */
+	public static long calculateTimeDifference(LocalTime startTime, LocalTime endTime, TemporalUnit temporalUnit) {
+		return startTime.until(endTime, temporalUnit);
+	}
+
+	/**
+	 * Calculate elapsed time in given TemporalUnit between two LocalDate object
+	 *
+	 * @param startDate
+	 * @param endDate
+	 * @param temporalUnit
+	 * @return long value of date difference in given temporal unit
+	 */
+	public static long calculateDateDifference(LocalDate startDate, LocalDate endDate, TemporalUnit temporalUnit) {
+		return startDate.until(endDate, temporalUnit);
+	}
+
+	/**
+	 * This method rounds given endtime to quarter hour.
 	 *
 	 * @param startTime LocalTime of task's start time.
 	 * @param endTime LocalTime of task's end time. This will be rounded.
 	 * @return LocalTime Returns the new rounded endTime.
 	 */
 	public static LocalTime roundToMultipleQuarterHour(LocalTime startTime, LocalTime endTime) {
-		int timeDiffInMinutes = (endTime.toSecondOfDay() / 60) - (startTime.toSecondOfDay() / 60);
-		if (!isMultipleQuarterHour(timeDiffInMinutes)) {
-			long mod = timeDiffInMinutes % 15;
-			if (mod < 8) {
-				endTime = endTime.minusMinutes(mod);
-			} else {
-				endTime = endTime.plusMinutes(15 - mod);
-			}
-		}
-		return endTime;
+		long mod = calculateTimeDifference(startTime, endTime, ChronoUnit.MINUTES) % QUARTER_HOUR_IN_MINUTES;
+		return mod < (Math.round(QUARTER_HOUR_IN_MINUTES / 2)) ? endTime.minusMinutes(mod) : endTime.plusMinutes(QUARTER_HOUR_IN_MINUTES - mod);
 	}
 
 	/**
@@ -43,35 +61,27 @@ public class Util {
 	 * @param t Task to check.
 	 * @param tasks Task list where search for same values like t task.
 	 * @return boolean Returns true if t task is conflict-free.
-	 * @throws EmptyTimeFieldException On any task has unsetted time field.
 	 */
-	public static boolean isSeparatedTime(Task t, Collection<Task> tasks) throws EmptyTimeFieldException {
+	public static boolean isSeparatedTime(Task t, Collection<Task> tasks) {
 		for (Task task : tasks) {
 			//if task starts when other task starts
 			if (t.getStartTime().equals(task.getStartTime())) {
-				System.err.println("task starts when other task starts");
 				return false;
 			}
 			//if task ends when other task ends
-			if (t.getEndTime().equals(task.getEndTime())) {
-				if (!task.getStartTime().equals(task.getEndTime()) && !t.getStartTime().equals(t.getEndTime())) {
-					System.err.println("task ends when other task ends");
-					return false;
-				}
+			if (t.getEndTime().equals(task.getEndTime()) && (!task.getStartTime().equals(task.getEndTime()) && !t.getStartTime().equals(t.getEndTime()))) {
+				return false;
 			}
 			//if starttime inside other task
 			if (t.getStartTime().isAfter(task.getStartTime()) && t.getStartTime().isBefore(task.getEndTime())) {
-				System.err.println("starttime inside other task");
 				return false;
 			}
 			//if endtime inside other task
 			if (t.getEndTime().isAfter(task.getStartTime()) && t.getEndTime().isBefore(task.getEndTime())) {
-				System.err.println("endtime inside other task");
 				return false;
 			}
 			//if task is around of other task
 			if (t.getStartTime().isBefore(task.getStartTime()) && t.getEndTime().isAfter(task.getEndTime())) {
-				System.err.println("task is around of other task");
 				return false;
 			}
 		}
@@ -79,24 +89,22 @@ public class Util {
 	}
 
 	/**
-	 * Check given localdate parameter is a weekend.
+	 * Check given localdate parameter is a weekday.
 	 *
 	 * @param actualDay The date to check.
-	 * @return boolean Returns true if localdate parameter equals DayOfWeek.SATURDAY or DayOfWeek.SUNDAY enums.
+	 * @return boolean Returns true if localdate DAY_OF_WEEK value not equals DayOfWeek.SATURDAY or DayOfWeek.SUNDAY values.
 	 */
 	public static boolean isWeekday(LocalDate actualDay) {
-		boolean notSaturday = actualDay.getDayOfWeek() != DayOfWeek.SATURDAY;
-		boolean notSunday = actualDay.getDayOfWeek() != DayOfWeek.SUNDAY;
-		return notSaturday && notSunday;
+		return actualDay.get(ChronoField.DAY_OF_WEEK) <= DayOfWeek.FRIDAY.getValue();
 	}
 
 	/**
 	 *
 	 * @param taskMinutes
-	 * @return boolean Returns true, if long parameter MOD 15 is zero.
+	 * @return boolean Returns true, if long parameter MOD QUARTER_HOUR_IN_MINUTES is zero.
 	 */
 	public static boolean isMultipleQuarterHour(long taskMinutes) {
-		return taskMinutes % 15 == 0;
+		return taskMinutes % QUARTER_HOUR_IN_MINUTES == 0;
 	}
 
 	/**
@@ -104,49 +112,29 @@ public class Util {
 	 *
 	 * @param startTime
 	 * @param endTime
-	 * @return Returns true, if long parameter MOD 15 is zero.
-	 * @throws NotExpectedTimeOrderException On end time is before start time.
-	 * @throws EmptyTimeFieldException On some of time fields is unsetted.
+	 * @return Returns true, if long parameter MOD QUARTER_HOUR_IN_MINUTES is zero.
 	 */
-	public static boolean isMultipleQuarterHour(LocalTime startTime, LocalTime endTime) throws NotExpectedTimeOrderException, EmptyTimeFieldException {
-		if (startTime == null || endTime == null) {
-			throw new EmptyTimeFieldException("Some time field is not setted.");
-		} else if (startTime.isBefore(endTime)) {
-			int taskMinutes = (endTime.toSecondOfDay() / 60) - (startTime.toSecondOfDay() / 60);
-			return Util.isMultipleQuarterHour(taskMinutes);
-		} else {
-			throw new NotExpectedTimeOrderException("Bad time order.");
-		}
+	public static boolean isMultipleQuarterHour(LocalTime startTime, LocalTime endTime) {
+		return isMultipleQuarterHour(calculateTimeDifference(startTime, endTime, ChronoUnit.MINUTES));
 	}
 
 	/**
 	 *
+	 * @param day
 	 * @return Task This method returns the task which is the last of the workday.
-	 * @throws NoTaskDeclaredException On task list is empty.
 	 */
-	public static Task getLatestTaskOfDay(WorkDay day) throws NoTaskDeclaredException, EmptyTimeFieldException {
-		List<Task> tasksInDay = day.getTasks();
-		if (tasksInDay.size() > 0) {
-			Task lastTask = tasksInDay.get(0);
-			for (Task task : tasksInDay) {
-				if (task.getEndTime().isAfter(lastTask.getEndTime())) {
-					lastTask = task;
-				}
-			}
-			return lastTask;
-		}
-		throw new NoTaskDeclaredException("No task in this workday.");
+	public static Task getLatestTaskOfDay(WorkDay day) {
+		Comparator<Task> endTimeComparator = Comparator.comparing(Task::getEndTime);
+		return day.getTasks().stream().max(endTimeComparator).get();
 	}
 
 	/**
 	 *
+	 * @param day
 	 * @return LocalTime Returns the finish time of the last task of workday.
-	 * @throws EmptyTimeFieldException On task list has task which has unsetted time field.
-	 * @throws NoTaskDeclaredException On task list is empty.
 	 */
-	public LocalTime endTimeOfTheLastTask(WorkDay day) throws EmptyTimeFieldException, NoTaskDeclaredException {
-		Task task = getLatestTaskOfDay(day);
-		return task.getEndTime();
+	public LocalTime endTimeOfTheLastTask(WorkDay day) {
+		return getLatestTaskOfDay(day).getEndTime();
 	}
 
 }
