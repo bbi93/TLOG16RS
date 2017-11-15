@@ -22,8 +22,8 @@ public class Task {
 
 	@Setter
 	private String taskId;
-	private LocalTime startTime = LocalTime.MIDNIGHT;
-	private LocalTime endTime = LocalTime.MIDNIGHT;
+	private LocalTime startTime = LocalTime.MIN;
+	private LocalTime endTime = LocalTime.MAX;
 	@Setter
 	private String comment;
 
@@ -32,7 +32,7 @@ public class Task {
 	}
 
 	public Task(String taskId, LocalTime startTime, String comment) {
-		this(taskId, startTime, LocalTime.MIDNIGHT, comment);
+		this(taskId, startTime, LocalTime.MAX, comment);
 	}
 	public Task(String taskId, LocalTime startTime, LocalTime endTime) {
 		this(taskId, startTime, endTime, DEFAULT_COMMENT);

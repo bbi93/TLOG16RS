@@ -45,8 +45,7 @@ public class WorkDay {
 	public void addTask(Task t) throws NotSeparatedTimesException {
 		if (Util.isSeparatedTime(t, this.getTasks())) {
 			tasks.add(t);
-			calculateWorkedTimeOfDay();
-			calculateExtraMinOfDay();
+			recalculateTimesOfDay();
 		} else {
 			throw new NotSeparatedTimesException("Task has time conflict with other task in workday.");
 		}
@@ -54,6 +53,10 @@ public class WorkDay {
 
 	public void removeTask(Task t) {
 		tasks.remove(t);
+		recalculateTimesOfDay();
+	}
+
+	public void recalculateTimesOfDay() {
 		calculateWorkedTimeOfDay();
 		calculateExtraMinOfDay();
 	}

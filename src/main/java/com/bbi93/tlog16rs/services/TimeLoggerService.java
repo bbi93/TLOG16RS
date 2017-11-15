@@ -17,6 +17,7 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -33,13 +34,15 @@ public class TimeLoggerService {
 	public WorkMonth addNewWorkMonth(TimeLogger timelogger, WorkMonthRB monthRB) {
 		WorkMonth workMonth = new WorkMonth(monthRB.getYear(), monthRB.getMonth());
 		timelogger.addMonth(workMonth);
+		timelogger.recalculateTimesOfTimeLogger();
 		return workMonth;
 	}
 
 	public WorkDay addNewWorkDay(TimeLogger timelogger, WorkDayRB dayRB) throws WeekendNotEnabledException {
 		WorkMonth selectedWorkMonth = selectWorkMonthByYearAndMonthNumber(timelogger, dayRB.getYear(), dayRB.getMonth());
-		WorkDay workDay = new WorkDay(LocalDate.of(dayRB.getYear(), dayRB.getMonth(), dayRB.getDay()), dayRB.getRequiredHours());
+		WorkDay workDay = new WorkDay(LocalDate.of(dayRB.getYear(), dayRB.getMonth(), dayRB.getDay()), Math.round(dayRB.getRequiredHours() * TimeUnit.HOURS.toMinutes(1)));
 		selectedWorkMonth.addWorkDay(workDay);
+		timelogger.recalculateTimesOfTimeLogger();
 		return workDay;
 	}
 
@@ -56,6 +59,7 @@ public class TimeLoggerService {
 		WorkDay selectedWorkDay = selectWorkDayByYearAndMonthAndDayNumber(timelogger, taskRB.getYear(), taskRB.getMonth(), taskRB.getDay());
 		Task task = new Task(taskRB.getTaskId(), LocalTime.parse(taskRB.getStartTime()), taskRB.getComment());
 		selectedWorkDay.addTask(task);
+		timelogger.recalculateTimesOfTimeLogger();
 		return task;
 	}
 
@@ -91,6 +95,7 @@ public class TimeLoggerService {
 		} else {
 			selectedTask.setEndTime(taskRB.getEndTime());
 		}
+		timelogger.recalculateTimesOfTimeLogger();
 	}
 
 	private Task selectTaskByWorkDayAndTaskIdandStartTime(WorkDay workDay, String taskId, String startTime) {
@@ -114,6 +119,7 @@ public class TimeLoggerService {
 			selectedTask.setEndTime(taskRB.getNewEndTime());
 			selectedTask.setComment(taskRB.getNewComment());
 		}
+		timelogger.recalculateTimesOfTimeLogger();
 	}
 
 	public void deleteSpecificTask(TimeLogger timelogger, DeleteTaskRB taskRB) throws WeekendNotEnabledException {
@@ -122,6 +128,7 @@ public class TimeLoggerService {
 		if (!selectedTask.equals(new Task())) {
 			selectedWorkDay.removeTask(selectedTask);
 		}
+		timelogger.recalculateTimesOfTimeLogger();
 	}
 
 	public void deleteAll(TimeLogger timelogger) {

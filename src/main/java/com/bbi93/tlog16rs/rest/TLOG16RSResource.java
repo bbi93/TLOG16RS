@@ -27,7 +27,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
-@Path("/")
+@Path("/timelogger")
 @Slf4j
 public class TLOG16RSResource {
 

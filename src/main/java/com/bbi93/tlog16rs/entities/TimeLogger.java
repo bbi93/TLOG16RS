@@ -27,6 +27,12 @@ public class TimeLogger {
 		months.removeAll(months);
 	}
 
+	public void recalculateTimesOfTimeLogger() {
+		months.stream().forEach((month) -> {
+			month.recalculateTimesOfMonth();
+		});
+	}
+
 	/**
 	 *
 	 * @param wm Workmonth to check.

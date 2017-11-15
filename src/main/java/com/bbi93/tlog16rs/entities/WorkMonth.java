@@ -44,9 +44,7 @@ public class WorkMonth {
 			if (date.equals(YearMonth.from(wd.getActualDay()))) {
 				if ((!Util.isWeekday(wd.getActualDay()) && isWeekendEnabled) || Util.isWeekday(wd.getActualDay())) {
 					days.add(wd);
-					calculateRequiredMinPerMonth();
-					calculateWorkedTimeOfMonth();
-					calculateExtraMinOfMonth();
+					recalculateTimesOfMonth();
 				} else {
 					throw new WeekendNotEnabledException("Given workday is on weekend, but it's not enabled.");
 				}
@@ -56,6 +54,13 @@ public class WorkMonth {
 
 	public void removeDay(WorkDay wd) {
 		days.remove(wd);
+		recalculateTimesOfMonth();
+	}
+
+	public void recalculateTimesOfMonth() {
+		days.stream().forEach((day) -> {
+			day.recalculateTimesOfDay();
+		});
 		calculateRequiredMinPerMonth();
 		calculateWorkedTimeOfMonth();
 		calculateExtraMinOfMonth();
@@ -70,7 +75,7 @@ public class WorkMonth {
 	}
 
 	private void calculateExtraMinOfMonth() {
-		this.extraMinOfMonth = this.workedTimeOfMonth - this.requiredMinPerMonth;
+		this.extraMinOfMonth = days.stream().map((day) -> day.getExtraMinOfDay()).reduce(0L, (accumulator, item) -> accumulator + item);
 	}
 
 	@Override

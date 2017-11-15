@@ -16,11 +16,12 @@ public class WorkDayRB {
 	private int year;
 	private int month;
 	private int day;
-	private int requiredHours;
+	private double requiredHours;
 
 	public WorkDayRB(int year, int month, int day) {
 		this.year = year;
 		this.month = month;
 		this.day = day;
+		this.requiredHours = 7.5;
 	}
 }

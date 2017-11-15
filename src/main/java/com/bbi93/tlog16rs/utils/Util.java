@@ -68,21 +68,24 @@ public class Util {
 			if (t.getStartTime().equals(task.getStartTime())) {
 				return false;
 			}
-			//if task ends when other task ends
-			if (t.getEndTime().equals(task.getEndTime()) && (!task.getStartTime().equals(task.getEndTime()) && !t.getStartTime().equals(t.getEndTime()))) {
-				return false;
-			}
-			//if starttime inside other task
-			if (t.getStartTime().isAfter(task.getStartTime()) && t.getStartTime().isBefore(task.getEndTime())) {
-				return false;
-			}
-			//if endtime inside other task
-			if (t.getEndTime().isAfter(task.getStartTime()) && t.getEndTime().isBefore(task.getEndTime())) {
-				return false;
-			}
-			//if task is around of other task
-			if (t.getStartTime().isBefore(task.getStartTime()) && t.getEndTime().isAfter(task.getEndTime())) {
-				return false;
+			//if any task's endtime is equal with LocalTime.MAX, task endtime is not set
+			if (!task.getEndTime().equals(LocalTime.MAX) && !t.getEndTime().equals(LocalTime.MAX)) {
+				//if task ends when other task ends
+				if (t.getEndTime().equals(task.getEndTime())) {
+					return false;
+				}
+				//if starttime inside other task
+				if (t.getStartTime().isAfter(task.getStartTime()) && t.getStartTime().isBefore(task.getEndTime())) {
+					return false;
+				}
+				//if endtime inside other task
+				if (t.getEndTime().isAfter(task.getStartTime()) && t.getEndTime().isBefore(task.getEndTime())) {
+					return false;
+				}
+				//if task is around of other task
+				if (t.getStartTime().isBefore(task.getStartTime()) && t.getEndTime().isAfter(task.getEndTime())) {
+					return false;
+				}
 			}
 		}
 		return true;
