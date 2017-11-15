@@ -57,7 +57,7 @@ public class TLOG16RSResource {
 		try {
 			return Response.ok(timeloggerService.addNewWorkDay(timelogger, dayRB)).build();
 		} catch (WeekendNotEnabledException ex) {
-			log.error("Workday cannot be add to given year-month.", ex);
+			log.error("Workday cannot be add to given year-month because the given day is on weekend.", ex);
 		}
 		return Response.serverError().build();
 	}
@@ -72,7 +72,7 @@ public class TLOG16RSResource {
 		} catch (NotSeparatedTimesException ex) {
 			log.error("Task cannot be add because task has timeconflict with other task.", ex);
 		} catch (WeekendNotEnabledException ex) {
-			log.error("Task cannot be add because the given day is on weekend", ex);
+			log.error("Task cannot be add because the given day is on weekend.", ex);
 		}
 		return Response.serverError().build();
 	}
@@ -106,7 +106,7 @@ public class TLOG16RSResource {
 		} catch (NotSeparatedTimesException ex) {
 			log.error("Task cannot be finish because task has timeconflict with other task.", ex);
 		} catch (WeekendNotEnabledException ex) {
-			log.error("Task cannot be add because the given day is on weekend", ex);
+			log.error("Task cannot be add because the given day is on weekend.", ex);
 		}
 		return Response.serverError().build();
 	}
@@ -140,9 +140,8 @@ public class TLOG16RSResource {
 
 	@PUT
 	@Path("/workmonths/deleteall")
-	public Response deleteAll() {
+	public void deleteAll() {
 		timeloggerService.deleteAll(timelogger);
-		return Response.ok().build();
 	}
 
 }
