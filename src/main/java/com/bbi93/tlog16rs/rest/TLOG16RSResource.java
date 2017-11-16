@@ -1,6 +1,8 @@
 package com.bbi93.tlog16rs.rest;
 
+import com.avaje.ebean.Ebean;
 import com.bbi93.tlog16rs.entities.Task;
+import com.bbi93.tlog16rs.entities.TestEntity;
 import com.bbi93.tlog16rs.entities.TimeLogger;
 import com.bbi93.tlog16rs.entities.WorkDay;
 import com.bbi93.tlog16rs.entities.WorkMonth;
@@ -142,6 +144,17 @@ public class TLOG16RSResource {
 	@Path("/workmonths/deleteall")
 	public void deleteAll() {
 		timeloggerService.deleteAll(timelogger);
+	}
+
+	@POST
+	@Path("/save/test")
+	@Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.TEXT_PLAIN)
+	public String saveToDataBase(String text) {
+		TestEntity entity=new TestEntity();
+		entity.setText(text);
+		Ebean.save(entity);
+		return entity.getId()+""+entity.getText();
 	}
 
 }

@@ -30,6 +30,21 @@ dependencies {
     compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: '2.9.2'
     compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.9.2'
     
+    compile group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '1.5.2'
+    compile group: 'org.avaje.ebeanorm', name: 'avaje-ebeanorm', version: '7.1.1'
+    compile group: 'org.avaje.ebeanorm', name: 'avaje-ebeanorm-agent', version: '4.9.1'
+}
+
+classes.doLast {
+    javaexec { // Ebean enchancement
+        classpath = sourceSets.main.compileClasspath
+        main = 'com.avaje.ebean.enhance.ant.MainTransform'
+        args = [
+			compileJava.destinationDir,
+                'com.bbi93.tlog16rs.entities',
+                'debug=1'
+        ]
+    }
 }
 
 run {

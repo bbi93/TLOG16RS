@@ -1,6 +1,7 @@
 package com.bbi93.tlog16rs.application;
 
 import com.bbi93.tlog16rs.rest.TLOG16RSResource;
+import com.bbi93.tlog16rs.services.DbService;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -22,9 +23,9 @@ public class TLOG16RSApplication extends Application<TLOG16RSConfiguration> {
 	}
 
 	@Override
-	public void run(final TLOG16RSConfiguration configuration,
-		final Environment environment) {
+	public void run(final TLOG16RSConfiguration configuration, final Environment environment) {
 		environment.jersey().register(new TLOG16RSResource());
+		new DbService();
 	}
 
 }
