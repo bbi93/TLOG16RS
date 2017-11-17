@@ -151,12 +151,4 @@ public class TLOG16RSResource {
 		timeloggerService.deleteAll(timelogger);
 	}
 
-	@POST
-	@Path("/save/test")
-	@Consumes(MediaType.TEXT_PLAIN)
-	@Produces(MediaType.TEXT_PLAIN)
-	public String saveToDataBase(String text) {
-		return dbService.saveTextToDatabase(text);
-	}
-
 }

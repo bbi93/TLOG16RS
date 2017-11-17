@@ -6,7 +6,10 @@ import com.avaje.ebean.EbeanServerFactory;
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
 import com.bbi93.tlog16rs.application.TLOG16RSConfiguration;
-import com.bbi93.tlog16rs.entities.TestEntity;
+import com.bbi93.tlog16rs.entities.Task;
+import com.bbi93.tlog16rs.entities.TimeLogger;
+import com.bbi93.tlog16rs.entities.WorkDay;
+import com.bbi93.tlog16rs.entities.WorkMonth;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -69,14 +72,10 @@ public class DbService {
 		serverConfig.setDdlRun(false);
 		serverConfig.setRegister(true);
 		serverConfig.setDataSourceConfig(dataSourceConfig);
-		serverConfig.addClass(TestEntity.class);
+		serverConfig.addClass(Task.class);
+		serverConfig.addClass(WorkDay.class);
+		serverConfig.addClass(WorkMonth.class);
+		serverConfig.addClass(TimeLogger.class);
 		serverConfig.setDefaultServer(true);
-	}
-
-	public String saveTextToDatabase(String text) {
-		TestEntity entity=new TestEntity();
-		entity.setText(text);
-		Ebean.save(entity);
-		return entity.toString();
 	}
 }
