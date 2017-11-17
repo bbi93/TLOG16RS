@@ -34,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TLOG16RSResource {
 
+	private static final String TIMELOGGER_NAME = "bbors";
 	private static final int TIMELOGGER_ID = 1;
 	private static TimeLoggerService timeloggerService = new TimeLoggerService();
 	private DbService dbService;
@@ -41,7 +42,7 @@ public class TLOG16RSResource {
 	public TLOG16RSResource(TLOG16RSApplication application) {
 		dbService = application.getDbService();
 		if (Ebean.find(TimeLogger.class).findRowCount() == 0) {
-			Ebean.save(new TimeLogger());
+			Ebean.save(new TimeLogger(TIMELOGGER_NAME));
 		}
 	}
 

@@ -52,5 +52,11 @@
             </column>
         </createTable>
     </changeSet>
+    
+    <changeSet id="002" author="bbi93">
+        <addColumn tableName="time_logger">
+            <column name="name" type="text"/>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>
