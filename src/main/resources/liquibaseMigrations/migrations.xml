@@ -1,15 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-     <changeSet id="1" author="bbi93">
-        <createTable tableName="test_entity">
+    <changeSet id="001" author="bbi93">
+        <createTable tableName="task">
+            <column name="id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="work_day_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="task_id" type="varchar(25)"/>
+            <column name="start_time" type="time"/>
+            <column name="end_time" type="time"/>
+            <column name="comment" type="text"/>
+            <column name="worked_time" type="int"/>
+        </createTable>
+
+        <createTable tableName="work_day">
+            <column name="id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="work_month_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actual_day" type="date"/>
+            <column name="required_min_per_day" type="int"/>
+            <column name="worked_time_of_day" type="int"/>
+            <column name="extra_min_of_day" type="int"/>
+        </createTable>
+        
+        <createTable tableName="work_month">
+            <column name="id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="time_logger_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date" type="date"/>
+            <column name="required_min_per_month" type="int"/>
+            <column name="worked_time_of_month" type="int"/>
+            <column name="extra_min_of_month" type="int"/>
+        </createTable>
+        
+        <createTable tableName="time_logger">
             <column name="id" autoIncrement="true" type="int">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="text" type="text"/>
         </createTable>
     </changeSet>
 

@@ -6,8 +6,13 @@ import java.util.List;
 import lombok.Getter;
 import com.bbi93.tlog16rs.exceptions.NotSeparatedTimesException;
 import com.bbi93.tlog16rs.utils.Util;
-import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
@@ -17,10 +22,16 @@ import lombok.Setter;
  */
 @Getter
 @NoArgsConstructor
+@Entity
 public class WorkDay {
 
 	private static final long DEFAULT_REQUIRED_MIN_PER_DAY = 450;
 
+	@Id
+	@GeneratedValue
+	int id;
+
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<Task> tasks = new ArrayList<>();
 	private LocalDate actualDay;
 	@Setter
@@ -57,13 +68,15 @@ public class WorkDay {
 	}
 
 	public void recalculateTimesOfDay() {
+		tasks.stream().forEach((task) -> {
+			task.recalculateWorkedTime();
+		});
 		calculateWorkedTimeOfDay();
 		calculateExtraMinOfDay();
 	}
 
 	private void calculateWorkedTimeOfDay() {
-		this.workedTimeOfDay = tasks.stream().map((task) -> Util.calculateTimeDifference(task.getStartTime(), task.getEndTime(), ChronoUnit.MINUTES))
-			.reduce(0L, (accumulator, item) -> accumulator + item);
+		this.workedTimeOfDay = tasks.stream().map((task) -> task.getWorkedTime()).reduce(0L, (accumulator, item) -> accumulator + item);
 	}
 
 	private void calculateExtraMinOfDay() {

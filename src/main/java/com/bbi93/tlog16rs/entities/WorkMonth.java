@@ -7,6 +7,12 @@ import lombok.Getter;
 import com.bbi93.tlog16rs.exceptions.WeekendNotEnabledException;
 import com.bbi93.tlog16rs.utils.Util;
 import java.util.Objects;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import lombok.Setter;
 
 /**
@@ -14,8 +20,14 @@ import lombok.Setter;
  * @author bbi93
  */
 @Getter
+@Entity
 public class WorkMonth {
 
+	@Id
+	@GeneratedValue
+	int id;
+
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<WorkDay> days = new ArrayList<>();
 	private YearMonth date;
 	private long requiredMinPerMonth;

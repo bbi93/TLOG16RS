@@ -2,6 +2,12 @@ package com.bbi93.tlog16rs.entities;
 
 import java.util.LinkedList;
 import java.util.List;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import lombok.Getter;
 
 /**
@@ -9,8 +15,14 @@ import lombok.Getter;
  * @author bbi93
  */
 @Getter
+@Entity
 public class TimeLogger {
 
+	@Id
+	@GeneratedValue
+	int id;
+
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<WorkMonth> months = new LinkedList<>();
 
 	public void addMonth(WorkMonth wm) {
