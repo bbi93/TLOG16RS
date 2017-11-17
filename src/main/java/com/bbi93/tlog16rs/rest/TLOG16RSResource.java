@@ -1,5 +1,6 @@
 package com.bbi93.tlog16rs.rest;
 
+import com.avaje.ebean.Ebean;
 import com.bbi93.tlog16rs.application.TLOG16RSApplication;
 import com.bbi93.tlog16rs.entities.Task;
 import com.bbi93.tlog16rs.entities.TimeLogger;
@@ -33,18 +34,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TLOG16RSResource {
 
-	private static TimeLogger timelogger = new TimeLogger();
+	private static final int TIMELOGGER_ID = 1;
 	private static TimeLoggerService timeloggerService = new TimeLoggerService();
 	private DbService dbService;
 
 	public TLOG16RSResource(TLOG16RSApplication application) {
-		dbService=application.getDbService();
+		dbService = application.getDbService();
+		if (Ebean.find(TimeLogger.class).findRowCount() == 0) {
+			Ebean.save(new TimeLogger());
+		}
 	}
 
 	@GET
 	@Path("/workmonths")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Collection<WorkMonth> getWorkMonths() {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		return timeloggerService.getWorkMonths(timelogger);
 	}
 
@@ -53,7 +58,10 @@ public class TLOG16RSResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public WorkMonth addNewMonth(WorkMonthRB monthRB) {
-		return timeloggerService.addNewWorkMonth(timelogger, monthRB);
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
+		WorkMonth newWorkMonth = timeloggerService.addNewWorkMonth(timelogger, monthRB);
+		Ebean.save(timelogger);
+		return newWorkMonth;
 	}
 
 	@POST
@@ -61,8 +69,11 @@ public class TLOG16RSResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response addNewDay(WorkDayRB dayRB) {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
-			return Response.ok(timeloggerService.addNewWorkDay(timelogger, dayRB)).build();
+			WorkDay newWorkDay = timeloggerService.addNewWorkDay(timelogger, dayRB);
+			Ebean.save(timelogger);
+			return Response.ok(newWorkDay).build();
 		} catch (WeekendNotEnabledException ex) {
 			log.error("Workday cannot be add to given year-month because the given day is on weekend.", ex);
 		}
@@ -74,8 +85,11 @@ public class TLOG16RSResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response startTask(StartTaskRB taskRB) {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
-			return Response.ok(timeloggerService.startNewTask(timelogger, taskRB)).build();
+			Task newTask = timeloggerService.startNewTask(timelogger, taskRB);
+			Ebean.save(timelogger);
+			return Response.ok(newTask).build();
 		} catch (NotSeparatedTimesException ex) {
 			log.error("Task cannot be add because task has timeconflict with other task.", ex);
 		} catch (WeekendNotEnabledException ex) {
@@ -90,6 +104,7 @@ public class TLOG16RSResource {
 	public Collection<WorkDay> getWorkDays(
 		@PathParam(value = "year") @NotNull @Valid int year,
 		@PathParam(value = "month") @NotNull @Valid int month) {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		return timeloggerService.getWorkDays(timelogger, year, month);
 	}
 
@@ -100,6 +115,7 @@ public class TLOG16RSResource {
 		@PathParam(value = "year") @NotNull @Valid int year,
 		@PathParam(value = "month") @NotNull @Valid int month,
 		@PathParam(value = "day") @NotNull @Valid int day) {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		return timeloggerService.getTasks(timelogger, year, month, day);
 	}
 
@@ -107,8 +123,10 @@ public class TLOG16RSResource {
 	@Path("/workmonths/workdays/tasks/finish")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response finishTask(FinishingTaskRB taskRB) {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
 			timeloggerService.finishSpecificTask(timelogger, taskRB);
+			Ebean.save(timelogger);
 			return Response.ok().build();
 		} catch (NotSeparatedTimesException ex) {
 			log.error("Task cannot be finish because task has timeconflict with other task.", ex);
@@ -122,8 +140,10 @@ public class TLOG16RSResource {
 	@Path("/workmonths/workdays/tasks/modify")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response modifyTask(ModifyTaskRB taskRB) {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
 			timeloggerService.modifySpecificTask(timelogger, taskRB);
+			Ebean.save(timelogger);
 			return Response.ok().build();
 		} catch (NotSeparatedTimesException ex) {
 			log.error("Task cannot be modify because task has timeconflict with other task.", ex);
@@ -136,8 +156,10 @@ public class TLOG16RSResource {
 	@PUT
 	@Path("/workmonths/workdays/tasks/delete")
 	public Response deleteTask(DeleteTaskRB taskRB) {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
 			timeloggerService.deleteSpecificTask(timelogger, taskRB);
+			Ebean.save(timelogger);
 			return Response.ok().build();
 		} catch (WeekendNotEnabledException ex) {
 			log.error("Task cannot be delete because not exists on the given day.", ex);
@@ -148,7 +170,9 @@ public class TLOG16RSResource {
 	@PUT
 	@Path("/workmonths/deleteall")
 	public void deleteAll() {
+		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		timeloggerService.deleteAll(timelogger);
+		Ebean.save(timelogger);
 	}
 
 }

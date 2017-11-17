@@ -43,6 +43,7 @@
             <column name="required_min_per_month" type="int"/>
             <column name="worked_time_of_month" type="int"/>
             <column name="extra_min_of_month" type="int"/>
+            <column name="is_weekend_enabled" type="boolean"/>
         </createTable>
         
         <createTable tableName="time_logger">
