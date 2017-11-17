@@ -1,8 +1,7 @@
 package com.bbi93.tlog16rs.rest;
 
-import com.avaje.ebean.Ebean;
+import com.bbi93.tlog16rs.application.TLOG16RSApplication;
 import com.bbi93.tlog16rs.entities.Task;
-import com.bbi93.tlog16rs.entities.TestEntity;
 import com.bbi93.tlog16rs.entities.TimeLogger;
 import com.bbi93.tlog16rs.entities.WorkDay;
 import com.bbi93.tlog16rs.entities.WorkMonth;
@@ -15,6 +14,7 @@ import com.bbi93.tlog16rs.rest.beans.ModifyTaskRB;
 import com.bbi93.tlog16rs.rest.beans.StartTaskRB;
 import com.bbi93.tlog16rs.rest.beans.WorkMonthRB;
 import com.bbi93.tlog16rs.rest.beans.WorkDayRB;
+import com.bbi93.tlog16rs.services.DbService;
 import java.util.Collection;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -35,6 +35,11 @@ public class TLOG16RSResource {
 
 	private static TimeLogger timelogger = new TimeLogger();
 	private static TimeLoggerService timeloggerService = new TimeLoggerService();
+	private DbService dbService;
+
+	public TLOG16RSResource(TLOG16RSApplication application) {
+		dbService=application.getDbService();
+	}
 
 	@GET
 	@Path("/workmonths")
@@ -151,10 +156,7 @@ public class TLOG16RSResource {
 	@Consumes(MediaType.TEXT_PLAIN)
 	@Produces(MediaType.TEXT_PLAIN)
 	public String saveToDataBase(String text) {
-		TestEntity entity=new TestEntity();
-		entity.setText(text);
-		Ebean.save(entity);
-		return entity.getId()+""+entity.getText();
+		return dbService.saveTextToDatabase(text);
 	}
 
 }

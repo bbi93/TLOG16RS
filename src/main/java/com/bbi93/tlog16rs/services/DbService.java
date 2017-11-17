@@ -1,9 +1,11 @@
 package com.bbi93.tlog16rs.services;
 
+import com.avaje.ebean.Ebean;
 import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.EbeanServerFactory;
 import com.avaje.ebean.config.DataSourceConfig;
 import com.avaje.ebean.config.ServerConfig;
+import com.bbi93.tlog16rs.application.TLOG16RSConfiguration;
 import com.bbi93.tlog16rs.entities.TestEntity;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -18,31 +20,23 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.FileSystemResourceAccessor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  *
  * @author bbi93
  */
+@Slf4j
 public class DbService {
 
 	private EbeanServer ebeanServer;
 	private DataSourceConfig dataSourceConfig = new DataSourceConfig();
 	private ServerConfig serverConfig = new ServerConfig();
+	private final String LIQUIBASE_MIGRATION_FILE_PATH = "/liquibaseMigrations/migrations.xml";
 
-	public DbService() {
-		dataSourceConfig.setDriver("org.mariadb.jdbc.Driver");
-		dataSourceConfig.setUrl("jdbc:mariadb://127.0.0.1:9001/timelogger");
-		dataSourceConfig.setUsername("timelogger");
-		dataSourceConfig.setPassword("633Ym2aZ5b9Wtzh4EJc4pANx");
-
-		serverConfig.setName("timelogger");
-		serverConfig.setDdlGenerate(false);
-		serverConfig.setDdlRun(false);
-		serverConfig.setRegister(true);
-		serverConfig.setDataSourceConfig(dataSourceConfig);
-		serverConfig.addClass(TestEntity.class);
-		serverConfig.setDefaultServer(true);
-
+	public DbService(TLOG16RSConfiguration configuration) {
+		initDataSourceConfig(configuration);
+		initServerConfig(configuration);
 		ebeanServer = EbeanServerFactory.create(serverConfig);
 		updateSchema();
 	}
@@ -51,7 +45,7 @@ public class DbService {
 		try {
 			Connection connection = DriverManager.getConnection(dataSourceConfig.getUrl(), dataSourceConfig.getUsername(), dataSourceConfig.getPassword());
 			Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
-			Liquibase liquibase = new Liquibase(this.getClass().getResource("/liquibaseMigrations/migrations.xml").getPath(), new FileSystemResourceAccessor(), database);
+			Liquibase liquibase = new Liquibase(this.getClass().getResource(LIQUIBASE_MIGRATION_FILE_PATH).getPath(), new FileSystemResourceAccessor(), database);
 			liquibase.update(new Contexts());
 		} catch (SQLException ex) {
 			Logger.getLogger(DbService.class.getName()).log(Level.SEVERE, null, ex);
@@ -60,5 +54,29 @@ public class DbService {
 		} catch (LiquibaseException ex) {
 			Logger.getLogger(DbService.class.getName()).log(Level.SEVERE, null, ex);
 		}
+	}
+
+	private void initDataSourceConfig(TLOG16RSConfiguration configuration) {
+		dataSourceConfig.setDriver(configuration.getDbDriver());
+		dataSourceConfig.setUrl(configuration.getDbUrl());
+		dataSourceConfig.setUsername(configuration.getDbUsername());
+		dataSourceConfig.setPassword(configuration.getDbPassword());
+	}
+
+	private void initServerConfig(TLOG16RSConfiguration configuration) {
+		serverConfig.setName(configuration.getDbName());
+		serverConfig.setDdlGenerate(false);
+		serverConfig.setDdlRun(false);
+		serverConfig.setRegister(true);
+		serverConfig.setDataSourceConfig(dataSourceConfig);
+		serverConfig.addClass(TestEntity.class);
+		serverConfig.setDefaultServer(true);
+	}
+
+	public String saveTextToDatabase(String text) {
+		TestEntity entity=new TestEntity();
+		entity.setText(text);
+		Ebean.save(entity);
+		return entity.toString();
 	}
 }

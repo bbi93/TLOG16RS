@@ -5,8 +5,12 @@ import com.bbi93.tlog16rs.services.DbService;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import lombok.Getter;
 
 public class TLOG16RSApplication extends Application<TLOG16RSConfiguration> {
+
+	@Getter
+	private DbService dbService;
 
 	public static void main(final String[] args) throws Exception {
 		new TLOG16RSApplication().run(args);
@@ -24,8 +28,8 @@ public class TLOG16RSApplication extends Application<TLOG16RSConfiguration> {
 
 	@Override
 	public void run(final TLOG16RSConfiguration configuration, final Environment environment) {
-		environment.jersey().register(new TLOG16RSResource());
-		new DbService();
+		dbService = new DbService(configuration);
+		environment.jersey().register(new TLOG16RSResource(this));
 	}
 
 }

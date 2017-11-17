@@ -26,4 +26,9 @@ public class TestEntity {
 	@Column
 	private String text;
 
+	@Override
+	public String toString() {
+		return new StringBuilder().append(id).append(" - ").append(text).toString();
+	}
+
 }

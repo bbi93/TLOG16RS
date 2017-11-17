@@ -43,7 +43,7 @@ classes.doLast {
         classpath = sourceSets.main.compileClasspath
         main = 'com.avaje.ebean.enhance.ant.MainTransform'
         args = [
-			compileJava.destinationDir,
+            compileJava.destinationDir,
                 'com.bbi93.tlog16rs.entities',
                 'debug=1'
         ]
@@ -51,6 +51,6 @@ classes.doLast {
 }
 
 run {
- args 'server'
+    args 'server', 'src/dist/config.yml'
 }
 
