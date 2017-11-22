@@ -1,6 +1,5 @@
 package com.bbi93.tlog16rs.services;
 
-import com.avaje.ebean.Ebean;
 import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.EbeanServerFactory;
 import com.avaje.ebean.config.DataSourceConfig;
@@ -17,12 +16,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import liquibase.Contexts;
 import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
-import liquibase.resource.FileSystemResourceAccessor;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -35,7 +32,7 @@ public class DbService {
 	private EbeanServer ebeanServer;
 	private DataSourceConfig dataSourceConfig = new DataSourceConfig();
 	private ServerConfig serverConfig = new ServerConfig();
-	private final String LIQUIBASE_MIGRATION_FILE_PATH = "/liquibaseMigrations/migrations.xml";
+	private final String LIQUIBASE_MIGRATION_FILE_PATH = "migrations.xml";
 
 	public DbService(TLOG16RSConfiguration configuration) {
 		initDataSourceConfig(configuration);
@@ -47,8 +44,7 @@ public class DbService {
 	private void updateSchema() {
 		try {
 			Connection connection = DriverManager.getConnection(dataSourceConfig.getUrl(), dataSourceConfig.getUsername(), dataSourceConfig.getPassword());
-			Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
-			Liquibase liquibase = new Liquibase(this.getClass().getResource(LIQUIBASE_MIGRATION_FILE_PATH).getPath(), new FileSystemResourceAccessor(), database);
+			Liquibase liquibase = new Liquibase(LIQUIBASE_MIGRATION_FILE_PATH,new ClassLoaderResourceAccessor(),new JdbcConnection(connection));
 			liquibase.update(new Contexts());
 		} catch (SQLException ex) {
 			Logger.getLogger(DbService.class.getName()).log(Level.SEVERE, null, ex);
