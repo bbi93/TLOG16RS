@@ -9,10 +9,9 @@ package com.bbi93.tlog16rs.exceptions;
  *
  * @author bbi93
  */
-public class FutureWorkException extends Exception {
+public class UserExistException extends Exception {
 
-	public FutureWorkException(String message) {
+	public UserExistException(String message) {
 		super(message);
 	}
-
 }

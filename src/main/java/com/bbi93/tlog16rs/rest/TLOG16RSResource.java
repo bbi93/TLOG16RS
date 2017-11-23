@@ -7,16 +7,19 @@ import com.bbi93.tlog16rs.entities.TimeLogger;
 import com.bbi93.tlog16rs.entities.WorkDay;
 import com.bbi93.tlog16rs.entities.WorkMonth;
 import com.bbi93.tlog16rs.exceptions.NotSeparatedTimesException;
+import com.bbi93.tlog16rs.exceptions.UserExistException;
 import com.bbi93.tlog16rs.exceptions.WeekendNotEnabledException;
 import com.bbi93.tlog16rs.services.TimeLoggerService;
 import com.bbi93.tlog16rs.rest.beans.DeleteTaskRB;
 import com.bbi93.tlog16rs.rest.beans.FinishingTaskRB;
 import com.bbi93.tlog16rs.rest.beans.ModifyTaskRB;
 import com.bbi93.tlog16rs.rest.beans.StartTaskRB;
+import com.bbi93.tlog16rs.rest.beans.UserRB;
 import com.bbi93.tlog16rs.rest.beans.WorkMonthRB;
 import com.bbi93.tlog16rs.rest.beans.WorkDayRB;
 import com.bbi93.tlog16rs.services.DbService;
 import java.util.Collection;
+import javax.naming.AuthenticationException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -70,15 +73,19 @@ public class TLOG16RSResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response addNewDay(WorkDayRB dayRB) {
+		Response response;
 		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
 			WorkDay newWorkDay = timeloggerService.addNewWorkDay(timelogger, dayRB);
 			Ebean.save(timelogger);
-			return Response.ok(newWorkDay).build();
-		} catch (WeekendNotEnabledException ex) {
-			log.error("Workday cannot be add to given year-month because the given day is on weekend.", ex);
+			response = Response.ok(newWorkDay).build();
+		} catch (WeekendNotEnabledException wneex) {
+			log.error("Workday cannot be add to given year-month because the given day is on weekend.", wneex);
+			response = Response.status(Response.Status.NOT_ACCEPTABLE).build();
+		} catch (Exception ex) {
+			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		return Response.serverError().build();
+		return response;
 	}
 
 	@POST
@@ -86,17 +93,22 @@ public class TLOG16RSResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response startTask(StartTaskRB taskRB) {
+		Response response;
 		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
 			Task newTask = timeloggerService.startNewTask(timelogger, taskRB);
 			Ebean.save(timelogger);
-			return Response.ok(newTask).build();
-		} catch (NotSeparatedTimesException ex) {
-			log.error("Task cannot be add because task has timeconflict with other task.", ex);
-		} catch (WeekendNotEnabledException ex) {
-			log.error("Task cannot be add because the given day is on weekend.", ex);
+			response = Response.ok(newTask).build();
+		} catch (NotSeparatedTimesException nstex) {
+			log.error("Task cannot be add because task has timeconflict with other task.", nstex);
+			response = Response.status(Response.Status.CONFLICT).build();
+		} catch (WeekendNotEnabledException wneex) {
+			log.error("Task cannot be add because the given day is on weekend.", wneex);
+			response = Response.status(Response.Status.NOT_ACCEPTABLE).build();
+		} catch (Exception ex) {
+			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		return Response.serverError().build();
+		return response;
 	}
 
 	@GET
@@ -124,48 +136,62 @@ public class TLOG16RSResource {
 	@Path("/workmonths/workdays/tasks/finish")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response finishTask(FinishingTaskRB taskRB) {
+		Response response;
 		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
 			timeloggerService.finishSpecificTask(timelogger, taskRB);
 			Ebean.save(timelogger);
 			return Response.ok().build();
-		} catch (NotSeparatedTimesException ex) {
-			log.error("Task cannot be finish because task has timeconflict with other task.", ex);
-		} catch (WeekendNotEnabledException ex) {
-			log.error("Task cannot be add because the given day is on weekend.", ex);
+		} catch (NotSeparatedTimesException nstex) {
+			log.error("Task cannot be finish because task has timeconflict with other task.", nstex);
+			response = Response.status(Response.Status.CONFLICT).build();
+		} catch (WeekendNotEnabledException wneex) {
+			log.error("Task cannot be add because the given day is on weekend.", wneex);
+			response = Response.status(Response.Status.NOT_ACCEPTABLE).build();
+		} catch (Exception ex) {
+			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		return Response.serverError().build();
+		return response;
 	}
 
 	@PUT
 	@Path("/workmonths/workdays/tasks/modify")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response modifyTask(ModifyTaskRB taskRB) {
+		Response response;
 		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
 			timeloggerService.modifySpecificTask(timelogger, taskRB);
 			Ebean.save(timelogger);
 			return Response.ok().build();
-		} catch (NotSeparatedTimesException ex) {
-			log.error("Task cannot be modify because task has timeconflict with other task.", ex);
-		} catch (WeekendNotEnabledException ex) {
-			log.error("Task cannot be modify because not exists on the given day.", ex);
+		} catch (NotSeparatedTimesException nstex) {
+			log.error("Task cannot be modify because task has timeconflict with other task.", nstex);
+			response = Response.status(Response.Status.CONFLICT).build();
+		} catch (WeekendNotEnabledException wneex) {
+			log.error("Task cannot be modify because not exists on the given day.", wneex);
+			response = Response.status(Response.Status.NOT_ACCEPTABLE).build();
+		} catch (Exception ex) {
+			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		return Response.serverError().build();
+		return response;
 	}
 
 	@PUT
 	@Path("/workmonths/workdays/tasks/delete")
 	public Response deleteTask(DeleteTaskRB taskRB) {
+		Response response;
 		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		try {
 			timeloggerService.deleteSpecificTask(timelogger, taskRB);
 			Ebean.save(timelogger);
 			return Response.ok().build();
-		} catch (WeekendNotEnabledException ex) {
-			log.error("Task cannot be delete because not exists on the given day.", ex);
+		} catch (WeekendNotEnabledException wneex) {
+			log.error("Task cannot be delete because not exists on the given day.", wneex);
+			response = Response.status(Response.Status.NOT_ACCEPTABLE).build();
+		} catch (Exception ex) {
+			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		return Response.serverError().build();
+		return response;
 	}
 
 	@PUT
@@ -174,6 +200,40 @@ public class TLOG16RSResource {
 		TimeLogger timelogger = Ebean.find(TimeLogger.class, TIMELOGGER_ID);
 		timeloggerService.deleteAll(timelogger);
 		Ebean.save(timelogger);
+	}
+
+	@POST
+	@Path("/register-user")
+	public Response registerUser(UserRB user) {
+		Response response;
+		TimeLogger timelogger = Ebean.find(TimeLogger.class).select("name").where().eq("name", user.getName()).findUnique();
+		try {
+			Ebean.save(timeloggerService.registerUser(timelogger, user));
+			response = Response.ok().build();
+		} catch (UserExistException uex) {
+			log.error("Cannot register user! ", uex);
+			response = Response.status(Response.Status.CONFLICT).build();
+		} catch (Exception ex) {
+			response = Response.status(Response.Status.BAD_REQUEST).build();
+		}
+		return response;
+	}
+
+	@POST
+	@Path("/login-user")
+	public Response loginUser(UserRB user) {
+		Response response;
+		try {
+			TimeLogger timelogger = Ebean.find(TimeLogger.class).select("name").where().eq("name", user.getName()).findUnique();
+			String token = timeloggerService.loginUser(timelogger, user);
+			response = Response.ok().header("Authorization", "Bearer " + token).build();
+		} catch (AuthenticationException aex) {
+			log.error("Cannot login user! ", aex);
+			response = Response.status(Response.Status.UNAUTHORIZED).build();
+		} catch (Exception ex) {
+			response = Response.status(Response.Status.BAD_REQUEST).build();
+		}
+		return response;
 	}
 
 }

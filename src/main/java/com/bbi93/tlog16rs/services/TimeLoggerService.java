@@ -1,5 +1,6 @@
 package com.bbi93.tlog16rs.services;
 
+import com.bbi93.tlog16rs.exceptions.UserExistException;
 import com.bbi93.tlog16rs.entities.Task;
 import com.bbi93.tlog16rs.entities.TimeLogger;
 import com.bbi93.tlog16rs.entities.WorkDay;
@@ -10,15 +11,19 @@ import com.bbi93.tlog16rs.rest.beans.DeleteTaskRB;
 import com.bbi93.tlog16rs.rest.beans.FinishingTaskRB;
 import com.bbi93.tlog16rs.rest.beans.ModifyTaskRB;
 import com.bbi93.tlog16rs.rest.beans.StartTaskRB;
+import com.bbi93.tlog16rs.rest.beans.UserRB;
 import com.bbi93.tlog16rs.rest.beans.WorkDayRB;
 import com.bbi93.tlog16rs.rest.beans.WorkMonthRB;
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
+import javax.naming.AuthenticationException;
 import lombok.extern.slf4j.Slf4j;
+import org.jose4j.lang.JoseException;
 
 /**
  *
@@ -26,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TimeLoggerService {
+
+	private JwtService jwtService = new JwtService();
 
 	public Collection<WorkMonth> getWorkMonths(TimeLogger timelogger) {
 		return timelogger.getMonths();
@@ -134,4 +141,28 @@ public class TimeLoggerService {
 	public void deleteAll(TimeLogger timelogger) {
 		timelogger.deleteMonths();
 	}
+
+	public TimeLogger registerUser(TimeLogger timelogger, UserRB user) throws UserExistException {
+		if (timelogger == null) {
+			String salt = jwtService.generateSalt();
+			String encodedPassword = jwtService.encodePasswordWithSalt(user.getPassword(), salt);
+			return new TimeLogger(user.getName(), encodedPassword, salt);
+		} else {
+			throw new UserExistException("Selected user already exist!");
+		}
+	}
+
+	public String loginUser(TimeLogger timelogger, UserRB user) throws UnsupportedEncodingException, JoseException, AuthenticationException {
+		if (timelogger != null) {
+			String password = jwtService.encodePasswordWithSalt(user.getPassword(), timelogger.getSalt());
+			if (password.equals(timelogger.getPassword())) {
+				return jwtService.generateJwtToken(timelogger);
+			} else {
+				throw new AuthenticationException("User not exists");
+			}
+		} else {
+			throw new AuthenticationException("User not exists");
+		}
+	}
+
 }

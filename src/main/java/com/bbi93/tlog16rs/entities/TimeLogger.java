@@ -27,9 +27,19 @@ public class TimeLogger {
 
 	@Setter
 	private String name;
+	@Setter
+	private String password;
+	@Setter
+	private String salt;
 
 	public TimeLogger(String name) {
 		this.name = name;
+	}
+
+	public TimeLogger(String name, String password, String salt) {
+		this.name = name;
+		this.password = password;
+		this.salt = salt;
 	}
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -58,5 +58,14 @@
             <column name="name" type="text"/>
         </addColumn>
     </changeSet>
+    
+    <changeSet id="003" author="bbi93">
+        <addColumn tableName="time_logger">
+            <column name="password" type="text"/>
+        </addColumn>
+        <addColumn tableName="time_logger">
+            <column name="salt" type="text"/>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>
