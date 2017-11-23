@@ -1,11 +1,7 @@
 package com.bbi93.tlog16rs.rest;
 
-import com.avaje.ebean.Ebean;
 import com.bbi93.tlog16rs.application.TLOG16RSApplication;
-import com.bbi93.tlog16rs.entities.Task;
 import com.bbi93.tlog16rs.entities.TimeLogger;
-import com.bbi93.tlog16rs.entities.WorkDay;
-import com.bbi93.tlog16rs.entities.WorkMonth;
 import com.bbi93.tlog16rs.exceptions.NotSeparatedTimesException;
 import com.bbi93.tlog16rs.exceptions.UserExistException;
 import com.bbi93.tlog16rs.exceptions.WeekendNotEnabledException;
@@ -18,7 +14,6 @@ import com.bbi93.tlog16rs.rest.beans.UserRB;
 import com.bbi93.tlog16rs.rest.beans.WorkMonthRB;
 import com.bbi93.tlog16rs.rest.beans.WorkDayRB;
 import com.bbi93.tlog16rs.services.DbService;
-import com.bbi93.tlog16rs.services.JwtService;
 import javax.naming.AuthenticationException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -40,29 +35,27 @@ import org.jose4j.jwt.consumer.InvalidJwtException;
 @Slf4j
 public class TLOG16RSResource {
 
-	private static final String TIMELOGGER_NAME = "bbors";
 	private static TimeLoggerService timeloggerService = new TimeLoggerService();
 	private DbService dbService;
 
 	public TLOG16RSResource(TLOG16RSApplication application) {
 		dbService = application.getDbService();
-		if (Ebean.find(TimeLogger.class).findRowCount() == 0) {
-			Ebean.save(new TimeLogger(TIMELOGGER_NAME));
-		}
 	}
 
 	@POST
 	@Path("/register-user")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response registerUser(UserRB user) {
 		Response response;
 		try {
-			TimeLogger timelogger = Ebean.find(TimeLogger.class).select("name").where().eq("name", user.getName()).findUnique();
-			Ebean.save(timeloggerService.registerUser(timelogger, user));
-			response = Response.ok().build();
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByName(user.getName());
+			response = Response.ok(timeloggerService.registerUser(timelogger, user)).build();
 		} catch (UserExistException uex) {
-			log.error("Cannot register user! ", uex);
+			log.error("Cannot register user! User already exist. ", uex);
 			response = Response.status(Response.Status.CONFLICT).build();
 		} catch (Exception ex) {
+			log.error("Error when try register user!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -70,16 +63,19 @@ public class TLOG16RSResource {
 
 	@POST
 	@Path("/login-user")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response loginUser(UserRB user) {
 		Response response;
 		try {
-			TimeLogger timelogger = Ebean.find(TimeLogger.class).select("name").where().eq("name", user.getName()).findUnique();
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByName(user.getName());
 			String token = timeloggerService.loginUser(timelogger, user);
 			response = Response.ok().header("Authorization", "Bearer " + token).build();
 		} catch (AuthenticationException aex) {
-			log.error("Cannot login user! ", aex);
+			log.error("Cannot login user! User not exist. ", aex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
 		} catch (Exception ex) {
+			log.error("Error when try login user!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -87,16 +83,18 @@ public class TLOG16RSResource {
 
 	@POST
 	@Path("/refresh-token")
-	public Response refreshToken(@HeaderParam(value = "Authorization") String token) {
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response refreshToken(@HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
 			String newToken = timeloggerService.refreshToken(timelogger);
 			response = Response.ok().header("Authorization", "Bearer " + newToken).build();
 		} catch (NotAuthorizedException naex) {
 			log.error("Not authorized user! ", naex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
 		} catch (Exception ex) {
+			log.error("Error when try refresh token!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -108,11 +106,14 @@ public class TLOG16RSResource {
 	public Response getWorkMonths(@HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
 			response = Response.ok(timeloggerService.getWorkMonths(timelogger)).build();
 		} catch (InvalidJwtException | NotAuthorizedException ex) {
 			log.error("Unauthorized!", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
+		} catch (Exception ex) {
+			log.error("Error when try get workmonths!", ex);
+			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
 	}
@@ -124,14 +125,13 @@ public class TLOG16RSResource {
 	public Response addNewMonth(WorkMonthRB monthRB, @HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
-			WorkMonth newWorkMonth = timeloggerService.addNewWorkMonth(timelogger, monthRB);
-			Ebean.save(timelogger);
-			response = Response.ok(newWorkMonth).build();
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
+			response = Response.ok(timeloggerService.addNewWorkMonth(timelogger, monthRB)).build();
 		} catch (InvalidJwtException | NotAuthorizedException ex) {
 			log.error("Not authorized user! ", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
 		} catch (Exception ex) {
+			log.error("Error when try add new month!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -144,10 +144,8 @@ public class TLOG16RSResource {
 	public Response addNewDay(WorkDayRB dayRB, @HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
-			WorkDay newWorkDay = timeloggerService.addNewWorkDay(timelogger, dayRB);
-			Ebean.save(timelogger);
-			response = Response.ok(newWorkDay).build();
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
+			response = Response.ok(timeloggerService.addNewWorkDay(timelogger, dayRB)).build();
 		} catch (WeekendNotEnabledException wneex) {
 			log.error("Workday cannot be add to given year-month because the given day is on weekend.", wneex);
 			response = Response.status(Response.Status.NOT_ACCEPTABLE).build();
@@ -155,6 +153,7 @@ public class TLOG16RSResource {
 			log.error("Not authorized user! ", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
 		} catch (Exception ex) {
+			log.error("Error when try add new wokday!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -167,10 +166,8 @@ public class TLOG16RSResource {
 	public Response startTask(StartTaskRB taskRB, @HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
-			Task newTask = timeloggerService.startNewTask(timelogger, taskRB);
-			Ebean.save(timelogger);
-			response = Response.ok(newTask).build();
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
+			response = Response.ok(timeloggerService.startNewTask(timelogger, taskRB)).build();
 		} catch (NotSeparatedTimesException nstex) {
 			log.error("Task cannot be add because task has timeconflict with other task.", nstex);
 			response = Response.status(Response.Status.CONFLICT).build();
@@ -181,6 +178,7 @@ public class TLOG16RSResource {
 			log.error("Not authorized user! ", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
 		} catch (Exception ex) {
+			log.error("Error when try start a new task!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -195,12 +193,13 @@ public class TLOG16RSResource {
 		@HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
 			response = Response.ok(timeloggerService.getWorkDays(timelogger, year, month)).build();
 		} catch (InvalidJwtException | NotAuthorizedException ex) {
 			log.error("Not authorized user! ", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
 		} catch (Exception ex) {
+			log.error("Error when try get workdays!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -216,11 +215,14 @@ public class TLOG16RSResource {
 		@HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
 			response = Response.ok(timeloggerService.getTasks(timelogger, year, month, day)).build();
 		} catch (InvalidJwtException | NotAuthorizedException ex) {
 			log.error("Not authorized user! ", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
+		} catch (Exception ex) {
+			log.error("Error when try get tasks!", ex);
+			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
 	}
@@ -231,9 +233,8 @@ public class TLOG16RSResource {
 	public Response finishTask(FinishingTaskRB taskRB, @HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
 			timeloggerService.finishSpecificTask(timelogger, taskRB);
-			Ebean.save(timelogger);
 			return Response.ok().build();
 		} catch (NotSeparatedTimesException nstex) {
 			log.error("Task cannot be finish because task has timeconflict with other task.", nstex);
@@ -245,6 +246,7 @@ public class TLOG16RSResource {
 			log.error("Not authorized user! ", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
 		} catch (Exception ex) {
+			log.error("Error when try finish a specific task!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -256,9 +258,8 @@ public class TLOG16RSResource {
 	public Response modifyTask(ModifyTaskRB taskRB, @HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
 			timeloggerService.modifySpecificTask(timelogger, taskRB);
-			Ebean.save(timelogger);
 			return Response.ok().build();
 		} catch (NotSeparatedTimesException nstex) {
 			log.error("Task cannot be modify because task has timeconflict with other task.", nstex);
@@ -270,6 +271,7 @@ public class TLOG16RSResource {
 			log.error("Not authorized user! ", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
 		} catch (Exception ex) {
+			log.error("Error when try modify specific task!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -280,14 +282,14 @@ public class TLOG16RSResource {
 	public Response deleteTask(DeleteTaskRB taskRB, @HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
 			timeloggerService.deleteSpecificTask(timelogger, taskRB);
-			Ebean.save(timelogger);
 			return Response.ok().build();
 		} catch (WeekendNotEnabledException wneex) {
 			log.error("Task cannot be delete because not exists on the given day.", wneex);
 			response = Response.status(Response.Status.NOT_ACCEPTABLE).build();
 		} catch (Exception ex) {
+			log.error("Error when try delete specific task!", ex);
 			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
@@ -298,13 +300,15 @@ public class TLOG16RSResource {
 	public Response deleteAll(@HeaderParam("Authorization") String token) {
 		Response response;
 		try {
-			TimeLogger timelogger = timeloggerService.findTimeLoggerViaToken(token);
+			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
 			timeloggerService.deleteAll(timelogger);
 			response = Response.ok().build();
-			Ebean.save(timelogger);
 		} catch (InvalidJwtException | NotAuthorizedException ex) {
 			log.error("Unauthorized!", ex);
 			response = Response.status(Response.Status.UNAUTHORIZED).build();
+		} catch (Exception ex) {
+			log.error("Error when try delete everything from timelogger!", ex);
+			response = Response.status(Response.Status.BAD_REQUEST).build();
 		}
 		return response;
 	}

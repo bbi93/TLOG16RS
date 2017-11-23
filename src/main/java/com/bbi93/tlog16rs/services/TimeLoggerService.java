@@ -45,6 +45,7 @@ public class TimeLoggerService {
 		WorkMonth workMonth = new WorkMonth(monthRB.getYear(), monthRB.getMonth());
 		timelogger.addMonth(workMonth);
 		timelogger.recalculateTimesOfTimeLogger();
+		Ebean.save(timelogger);
 		return workMonth;
 	}
 
@@ -53,6 +54,7 @@ public class TimeLoggerService {
 		WorkDay workDay = new WorkDay(LocalDate.of(dayRB.getYear(), dayRB.getMonth(), dayRB.getDay()), Math.round(dayRB.getRequiredHours() * TimeUnit.HOURS.toMinutes(1)));
 		selectedWorkMonth.addWorkDay(workDay);
 		timelogger.recalculateTimesOfTimeLogger();
+		Ebean.save(timelogger);
 		return workDay;
 	}
 
@@ -70,6 +72,7 @@ public class TimeLoggerService {
 		Task task = new Task(taskRB.getTaskId(), LocalTime.parse(taskRB.getStartTime()), taskRB.getComment());
 		selectedWorkDay.addTask(task);
 		timelogger.recalculateTimesOfTimeLogger();
+		Ebean.save(timelogger);
 		return task;
 	}
 
@@ -106,6 +109,7 @@ public class TimeLoggerService {
 			selectedTask.setEndTime(taskRB.getEndTime());
 		}
 		timelogger.recalculateTimesOfTimeLogger();
+		Ebean.save(timelogger);
 	}
 
 	private Task selectTaskByWorkDayAndTaskIdandStartTime(WorkDay workDay, String taskId, String startTime) {
@@ -130,6 +134,7 @@ public class TimeLoggerService {
 			selectedTask.setComment(taskRB.getNewComment());
 		}
 		timelogger.recalculateTimesOfTimeLogger();
+		Ebean.save(timelogger);
 	}
 
 	public void deleteSpecificTask(TimeLogger timelogger, DeleteTaskRB taskRB) throws WeekendNotEnabledException {
@@ -139,17 +144,21 @@ public class TimeLoggerService {
 			selectedWorkDay.removeTask(selectedTask);
 		}
 		timelogger.recalculateTimesOfTimeLogger();
+		Ebean.save(timelogger);
 	}
 
 	public void deleteAll(TimeLogger timelogger) {
 		timelogger.deleteMonths();
+		Ebean.save(timelogger);
 	}
 
 	public TimeLogger registerUser(TimeLogger timelogger, UserRB user) throws UserExistException {
 		if (timelogger == null) {
 			String salt = jwtService.generateSalt();
 			String encodedPassword = jwtService.encodePasswordWithSalt(user.getPassword(), salt);
-			return new TimeLogger(user.getName(), encodedPassword, salt);
+			TimeLogger newTimelogger=new TimeLogger(user.getName(), encodedPassword, salt);
+			Ebean.save(newTimelogger);
+			return newTimelogger;
 		} else {
 			throw new UserExistException("Selected user already exist!");
 		}
@@ -168,7 +177,7 @@ public class TimeLoggerService {
 		}
 	}
 
-	public TimeLogger findTimeLoggerViaToken(String token) throws InvalidJwtException, NotAuthorizedException {
+	public TimeLogger findTimeLoggerByToken(String token) throws InvalidJwtException, NotAuthorizedException {
 		if (token != null) {
 			String jwt = token.split(" ")[1];
 			String timeloggerName = jwtService.getNameFromJwtToken(jwt);
@@ -176,6 +185,10 @@ public class TimeLoggerService {
 		} else {
 			throw new NotAuthorizedException("Not existing user");
 		}
+	}
+
+	public TimeLogger findTimeLoggerByName(String name) {
+		return Ebean.find(TimeLogger.class).select("name").where().eq("name", name).findUnique();
 	}
 
 	public String refreshToken(TimeLogger timelogger) throws UnsupportedEncodingException, JoseException {
