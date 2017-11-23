@@ -1,5 +1,6 @@
 package com.bbi93.tlog16rs.services;
 
+import com.avaje.ebean.Ebean;
 import com.bbi93.tlog16rs.exceptions.UserExistException;
 import com.bbi93.tlog16rs.entities.Task;
 import com.bbi93.tlog16rs.entities.TimeLogger;
@@ -22,7 +23,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import javax.naming.AuthenticationException;
+import javax.ws.rs.NotAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
+import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.lang.JoseException;
 
 /**
@@ -163,6 +166,20 @@ public class TimeLoggerService {
 		} else {
 			throw new AuthenticationException("User not exists");
 		}
+	}
+
+	public TimeLogger findTimeLoggerViaToken(String token) throws InvalidJwtException, NotAuthorizedException {
+		if (token != null) {
+			String jwt = token.split(" ")[1];
+			String timeloggerName = jwtService.getNameFromJwtToken(jwt);
+			return Ebean.find(TimeLogger.class).where().eq("name", timeloggerName).findUnique();
+		} else {
+			throw new NotAuthorizedException("Not existing user");
+		}
+	}
+
+	public String refreshToken(TimeLogger timelogger) throws UnsupportedEncodingException, JoseException {
+		return jwtService.generateJwtToken(timelogger);
 	}
 
 }
