@@ -3,6 +3,7 @@ package com.bbi93.tlog16rs.services;
 import com.bbi93.tlog16rs.entities.TimeLogger;
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
+import java.util.Random;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
@@ -19,12 +20,15 @@ import org.jose4j.lang.JoseException;
  */
 public class JwtService {
 
+	private static final Random RANDOM = new SecureRandom();
 	private final int SALT_SIZE = 32;
 	private final String secret = "JstqLDmfEFjtyJ73BVKd8Ht427VrsGZ5";
 	private final float expirationTimeInMinutes = 5;
 
 	public String generateSalt() {
-		return DigestUtils.sha256Hex(new SecureRandom().generateSeed(SALT_SIZE));
+		byte[] salt = new byte[SALT_SIZE];
+		RANDOM.nextBytes(salt);
+		return DigestUtils.sha256Hex(salt);
 	}
 
 	public String encodePasswordWithSalt(String password, String salt) {

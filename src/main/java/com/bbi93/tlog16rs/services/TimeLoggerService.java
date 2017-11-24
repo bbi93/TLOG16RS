@@ -142,21 +142,21 @@ public class TimeLoggerService {
 		Task selectedTask = selectTaskByWorkDayAndTaskIdandStartTime(selectedWorkDay, taskRB.getTaskId(), taskRB.getStartTime());
 		if (!selectedTask.equals(new Task())) {
 			selectedWorkDay.removeTask(selectedTask);
+			Ebean.delete(selectedTask);
 		}
 		timelogger.recalculateTimesOfTimeLogger();
 		Ebean.save(timelogger);
 	}
 
-	public void deleteAll(TimeLogger timelogger) {
-		timelogger.deleteMonths();
-		Ebean.save(timelogger);
+	public void deleteTimeLogger(TimeLogger timelogger) {
+		Ebean.delete(TimeLogger.class, timelogger.getId());
 	}
 
 	public TimeLogger registerUser(TimeLogger timelogger, UserRB user) throws UserExistException {
 		if (timelogger == null) {
 			String salt = jwtService.generateSalt();
 			String encodedPassword = jwtService.encodePasswordWithSalt(user.getPassword(), salt);
-			TimeLogger newTimelogger=new TimeLogger(user.getName(), encodedPassword, salt);
+			TimeLogger newTimelogger = new TimeLogger(user.getName(), encodedPassword, salt);
 			Ebean.save(newTimelogger);
 			return newTimelogger;
 		} else {

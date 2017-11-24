@@ -26,6 +26,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.NotAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
@@ -277,7 +278,7 @@ public class TLOG16RSResource {
 		return response;
 	}
 
-	@PUT
+	@DELETE
 	@Path("/workmonths/workdays/tasks/delete")
 	public Response deleteTask(DeleteTaskRB taskRB, @HeaderParam("Authorization") String token) {
 		Response response;
@@ -295,13 +296,13 @@ public class TLOG16RSResource {
 		return response;
 	}
 
-	@PUT
-	@Path("/workmonths/deleteall")
-	public Response deleteAll(@HeaderParam("Authorization") String token) {
+	@DELETE
+	@Path("/delete-user")
+	public Response deleteTimeLogger(@HeaderParam("Authorization") String token) {
 		Response response;
 		try {
 			TimeLogger timelogger = timeloggerService.findTimeLoggerByToken(token);
-			timeloggerService.deleteAll(timelogger);
+			timeloggerService.deleteTimeLogger(timelogger);
 			response = Response.ok().build();
 		} catch (InvalidJwtException | NotAuthorizedException ex) {
 			log.error("Unauthorized!", ex);
